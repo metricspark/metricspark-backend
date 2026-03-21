@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<title>MetricSpark Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+
+body{
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+
+/* BACKGROUND */
+background:linear-gradient(135deg,#0b1f4a,#122b63,#1d3f8a);
+
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+/* LOGIN CARD */
+
+.container{
+width:420px;
+background:#f5f6f8;
+padding:40px;
+border-radius:18px;
+box-shadow:0 15px 40px rgba(0,0,0,0.25);
+text-align:center;
+}
+
+.logo{
+width:240px;
+margin-bottom:30px;
+display:block;
+margin-left:auto;
+margin-right:auto;
+}
+
+/* TABS */
+
+.tabs{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+.tabs button{
+flex:1;
+padding:12px;
+border:none;
+background:#d9d9d9;
+font-weight:bold;
+cursor:pointer;
+border-radius:8px;
+}
+
+.tabs button:hover{
+background:#c9c9c9;
+}
+
+/* INPUT */
+
+input{
+width:100%;
+padding:14px;
+margin-bottom:14px;
+border-radius:10px;
+border:1px solid #ccc;
+font-size:14px;
+}
+
+/* BUTTON */
+
+#loginBtn{
+width:100%;
+padding:14px;
+background:#2d63d3;
+color:white;
+border:none;
+border-radius:10px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}
+
+#loginBtn:hover{
+background:#1f4fb4;
+}
+
+/* LINK */
+
+a{
+display:block;
+margin-top:12px;
+font-size:14px;
+color:#2d63d3;
+cursor:pointer;
+text-decoration:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="assets/metricspark-logo.png" class="logo">
+
+<div class="tabs">
+<button id="loginTab">Sign In</button>
+<button id="signupTab">Sign Up</button>
+</div>
+
+<input id="email" type="email" placeholder="Email">
+
+<input id="password" type="password" placeholder="Password">
+
+<button id="loginBtn">Sign In</button>
+
+<a id="forgotPassword">Forgot Password?</a>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import { 
+getAuth,
+signInWithEmailAndPassword,
+createUserWithEmailAndPassword,
+sendPasswordResetEmail,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+getFirestore,
+doc,
+setDoc,
+getDoc,
+serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+const firebaseConfig = {
+apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+authDomain: "metricspark-1456b.firebaseapp.com",
+projectId: "metricspark-1456b",
+storageBucket: "metricspark-1456b.appspot.com",
+messagingSenderId: "958626906247",
+appId: "1:958626906247:web:0ed0f6ea8607e233e2b822"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+
+const loginBtn = document.getElementById("loginBtn");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+
+const signupTab = document.getElementById("signupTab");
+const loginTab = document.getElementById("loginTab");
+const forgotPassword = document.getElementById("forgotPassword");
+
+let isSignUp = false;
+
+
+/* TAB SWITCH */
+
+loginTab.onclick = () => {
+
+isSignUp = false;
+loginBtn.textContent = "Sign In";
+
+};
+
+signupTab.onclick = () => {
+
+isSignUp = true;
+loginBtn.textContent = "Sign Up";
+
+};
+
+
+/* LOGIN / SIGNUP */
+
+loginBtn.onclick = async () => {
+
+const email = emailInput.value.trim();
+const password = passwordInput.value.trim();
+
+if(!email || !password){
+
+alert("Enter email and password");
+return;
+
+}
+
+try{
+
+if(isSignUp){
+
+const userCredential =
+await createUserWithEmailAndPassword(auth,email,password);
+
+const user = userCredential.user;
+
+await setDoc(doc(db,"users",user.uid),{
+
+email: email,
+role: "engineer",
+createdAt: serverTimestamp()
+
+});
+
+alert("Account created");
+
+window.location.href="user-dashboard.html";
+
+}else{
+
+const userCredential =
+await signInWithEmailAndPassword(auth,email,password);
+
+const user = userCredential.user;
+
+const docRef = doc(db,"users",user.uid);
+const docSnap = await getDoc(docRef);
+
+if(docSnap.exists()){
+
+const role = docSnap.data().role;
+
+if(role==="manager"){
+
+window.location.href="manager-dashboard.html";
+
+}else{
+
+window.location.href="user-dashboard.html";
+
+}
+
+}else{
+
+window.location.href="user-dashboard.html";
+
+}
+
+}
+
+}catch(error){
+
+console.error(error);
+alert(error.message);
+
+}
+
+};
+
+
+/* PASSWORD RESET */
+
+forgotPassword.onclick = async () => {
+
+const email = emailInput.value.trim();
+
+if(!email){
+
+alert("Enter your email first");
+return;
+
+}
+
+try{
+
+await sendPasswordResetEmail(auth,email);
+alert("Password reset email sent");
+
+}catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+
+/* AUTO LOGIN */
+
+onAuthStateChanged(auth, async(user)=>{
+
+if(user){
+
+const docRef = doc(db,"users",user.uid);
+const docSnap = await getDoc(docRef);
+
+if(docSnap.exists()){
+
+const role = docSnap.data().role;
+
+if(role==="manager"){
+
+window.location.href="manager-dashboard.html";
+
+}else{
+
+window.location.href="user-dashboard.html";
+
+}
+
+}
+
+}
+
+});
+
+</script>
+
+</body>
+</html>

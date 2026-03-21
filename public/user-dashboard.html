@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MetricSpark Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+
+<style>
+
+body{
+margin:0;
+font-family:Segoe UI;
+background:linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+}
+
+.header{
+background:#111827;
+color:white;
+padding:12px 25px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.logout-btn{
+background:#ef4444;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:4px;
+}
+
+.export-btn{
+background:#10b981;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:4px;
+margin-right:10px;
+}
+
+.main{
+display:flex;
+gap:20px;
+padding:20px 30px;
+}
+
+.card{
+background:white;
+padding:16px;
+border-radius:10px;
+box-shadow:0 5px 20px rgba(0,0,0,0.25);
+}
+
+.form-card{width:65%}
+.calendar-card{width:35%}
+
+.form-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px 15px;
+}
+
+.form-grid input,
+.form-grid select{
+padding:6px;
+border:1px solid #ddd;
+border-radius:4px;
+}
+
+.full{grid-column:span 2}
+
+.save-btn{
+background:#2563eb;
+color:white;
+border:none;
+padding:8px;
+border-radius:4px;
+}
+
+.table-card{
+margin:20px 30px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+background:#111827;
+color:white;
+padding:8px;
+}
+
+td{
+padding:7px;
+border-bottom:1px solid #ddd;
+text-align:center;
+}
+
+.action-btn{
+border:none;
+padding:4px 8px;
+border-radius:4px;
+color:white;
+}
+
+.edit{background:#2563eb}
+.delete{background:#ef4444}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+
+MetricSpark Productivity Tracker
+
+<div>
+<button class="export-btn" id="exportBtn">Export</button>
+<button class="logout-btn" id="logoutBtn">Logout</button>
+</div>
+
+</div>
+
+<div class="main">
+
+<div class="card form-card">
+
+<h3>Daily Work Entry</h3>
+
+<div class="form-grid">
+
+<label>Date</label>
+<label>Name</label>
+
+<input type="date" id="date">
+<input type="text" id="name" readonly>
+
+<label>Status</label>
+<label>Manager</label>
+
+<select id="status">
+<option value="">Select</option>
+<option value="Working">Working</option>
+<option value="PTO">PTO</option>
+<option value="Week Off">Week Off</option>
+</select>
+
+<select id="manager">
+<option value="">Select Manager</option>
+<option>Anderson</option>
+<option>Akhilesh</option>
+<option>Kip</option>
+</select>
+
+<label>Billable</label>
+<label>Non Billable</label>
+
+<input type="number" id="billable">
+<input type="number" id="nonbillable">
+
+<label>Tickets</label>
+<label>Closed</label>
+
+<input type="number" id="tickets">
+<input type="number" id="closed">
+
+<label>Escalated</label>
+<label>Waiting</label>
+
+<input type="number" id="escalated">
+<input type="number" id="waiting">
+
+<label>Scheduled</label>
+<label></label>
+
+<input type="number" id="scheduled">
+<div></div>
+
+<label class="full">Comment</label>
+<input type="text" id="comment" class="full">
+
+<button class="save-btn full" id="saveBtn">Save Entry</button>
+
+</div>
+
+</div>
+
+<div class="card calendar-card">
+
+<h3>Work Calendar</h3>
+<div id="calendar"></div>
+
+</div>
+
+</div>
+
+<div class="card table-card">
+
+<h3>Submitted Entries</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Date</th>
+<th>Name</th>
+<th>Status</th>
+<th>Billable</th>
+<th>Non Billable</th>
+<th>Tickets</th>
+<th>Closed</th>
+<th>Escalated</th>
+<th>Waiting</th>
+<th>Scheduled</th>
+<th>Comment</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="dataTable"></tbody>
+
+</table>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth,onAuthStateChanged,signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore,collection,addDoc,getDocs,query,where,doc,updateDoc,deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+authDomain:"metricspark-1456b.firebaseapp.com",
+projectId:"metricspark-1456b",
+storageBucket:"metricspark-1456b.appspot.com",
+messagingSenderId:"958626906247",
+appId:"1:958626906247:web:0ed0f6ea8607e233e2b822"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+let calendar;
+let editId=null;
+
+/* AUTH */
+
+onAuthStateChanged(auth,(user)=>{
+if(!user){
+window.location.href="index.html";
+return;
+}
+document.getElementById("name").value=user.email;
+});
+
+
+/* LOGOUT */
+
+document.getElementById("logoutBtn").onclick=async()=>{
+await signOut(auth);
+window.location.href="index.html";
+};
+
+
+/* SAVE ENTRY */
+
+document.getElementById("saveBtn").onclick=async()=>{
+
+const date=dateInput.value;
+const name=nameInput.value;
+const status=status.value;
+const manager=manager.value;
+const escalated=escalatedInput.value;
+const waiting=waitingInput.value;
+const scheduled=scheduledInput.value;
+const comment=commentInput.value;
+
+/* REQUIRED VALIDATION */
+
+if(!date || !status || !manager || !escalated || !waiting || !scheduled || !comment){
+alert("Please fill all mandatory fields.");
+return;
+}
+
+/* DUPLICATE CHECK */
+
+const q=query(collection(db,"worklog"),
+where("date","==",date),
+where("name","==",name));
+
+const existing=await getDocs(q);
+
+if(!existing.empty && !editId){
+
+if(confirm("Entry already exists. Edit it?")){
+editId=existing.docs[0].id;
+loadForm(existing.docs[0].data());
+return;
+}
+
+}
+
+const entry={
+date,
+name,
+status,
+manager,
+billable:billable.value || 0,
+nonbillable:nonbillable.value || 0,
+tickets:tickets.value || 0,
+closed:closed.value || 0,
+escalated,
+waiting,
+scheduled,
+comment
+};
+
+if(editId){
+
+await updateDoc(doc(db,"worklog",editId),entry);
+editId=null;
+
+}else{
+
+await addDoc(collection(db,"worklog"),entry);
+
+}
+
+loadData();
+
+};
+
+
+/* LOAD DATA */
+
+async function loadData(){
+
+const snapshot=await getDocs(collection(db,"worklog"));
+
+dataTable.innerHTML="";
+
+if(calendar) calendar.removeAllEvents();
+
+const currentUser=auth.currentUser.email;
+
+snapshot.forEach(docSnap=>{
+
+const d=docSnap.data();
+
+let action=`<span style="color:gray">View</span>`;
+
+if(d.name===currentUser){
+
+action=`
+<button class="action-btn edit" onclick="editEntry('${docSnap.id}')">Edit</button>
+<button class="action-btn delete" onclick="deleteEntry('${docSnap.id}')">Delete</button>
+`;
+
+}
+
+dataTable.innerHTML+=`
+<tr>
+<td>${d.date}</td>
+<td>${d.name}</td>
+<td>${d.status}</td>
+<td>${d.billable}</td>
+<td>${d.nonbillable}</td>
+<td>${d.tickets}</td>
+<td>${d.closed}</td>
+<td>${d.escalated}</td>
+<td>${d.waiting}</td>
+<td>${d.scheduled}</td>
+<td>${d.comment}</td>
+<td>${action}</td>
+</tr>
+`;
+
+if(calendar && d.status!=="Working"){
+
+calendar.addEvent({
+title:d.status,
+start:d.date,
+color:d.status==="PTO"?"#facc15":"#3b82f6"
+});
+
+}
+
+});
+
+}
+
+
+/* DELETE */
+
+window.deleteEntry=async(id)=>{
+
+const snapshot=await getDocs(collection(db,"worklog"));
+
+let entryData;
+
+snapshot.forEach(d=>{
+if(d.id===id){
+entryData=d.data();
+}
+});
+
+if(entryData.name!==auth.currentUser.email){
+alert("You can only delete your own entries.");
+return;
+}
+
+if(confirm("Delete entry?")){
+
+await deleteDoc(doc(db,"worklog",id));
+loadData();
+
+}
+
+};
+
+
+/* EXPORT */
+
+exportBtn.onclick=async()=>{
+
+const snapshot=await getDocs(collection(db,"worklog"));
+
+let csv="Date,Name,Status,Billable,NonBillable,Tickets,Closed,Escalated,Waiting,Scheduled,Comment\n";
+
+snapshot.forEach(doc=>{
+const d=doc.data();
+csv+=`${d.date},${d.name},${d.status},${d.billable},${d.nonbillable},${d.tickets},${d.closed},${d.escalated},${d.waiting},${d.scheduled},${d.comment}\n`;
+});
+
+const blob=new Blob([csv]);
+const url=URL.createObjectURL(blob);
+
+const a=document.createElement("a");
+a.href=url;
+a.download="metricspark_report.csv";
+a.click();
+
+};
+
+
+/* CALENDAR */
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+const calendarEl=document.getElementById("calendar");
+
+calendar=new FullCalendar.Calendar(calendarEl,{
+initialView:"dayGridMonth",
+height:350,
+dateClick:(info)=>{
+document.getElementById("date").value=info.dateStr;
+}
+});
+
+calendar.render();
+
+loadData();
+
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>MetricSpark Signup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body{
+      font-family: Arial;
+      background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin:0;
+    }
+
+    .card{
+      background:white;
+      padding:30px;
+      width:320px;
+      border-radius:10px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.2);
+      text-align:center;
+    }
+
+    input{
+      width:100%;
+      padding:10px;
+      margin-top:10px;
+      border:1px solid #ccc;
+      border-radius:6px;
+    }
+
+    button{
+      width:100%;
+      padding:12px;
+      margin-top:15px;
+      background:#2f4da0;
+      color:white;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:16px;
+    }
+
+    button:hover{
+      background:#203a80;
+    }
+
+    a{
+      text-decoration:none;
+      color:#2f4da0;
+      font-size:14px;
+    }
+  </style>
+
+</head>
+
+
+<body>
+
+<div class="card">
+
+<h2>Create Account</h2>
+
+<input id="email" type="email" placeholder="Email">
+
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="signupUser()">Sign Up</button>
+
+<p style="margin-top:10px;">
+Already have an account?
+<a href="index.html">Login</a>
+</p>
+
+</div>
+
+
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+import { getAuth, createUserWithEmailAndPassword }
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+import { getFirestore, doc, setDoc, serverTimestamp }
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+  authDomain: "metricspark-1456b.firebaseapp.com",
+  projectId: "metricspark-1456b",
+  storageBucket: "metricspark-1456b.appspot.com",
+  messagingSenderId: "958626906247",
+  appId: "1:958626906247:web:0ed0f6ea8607e233e2b822"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+
+
+window.signupUser = async function(){
+
+const email = document.getElementById("email").value.trim().toLowerCase();
+const password = document.getElementById("password").value.trim();
+
+if(!email || !password){
+
+alert("Please enter email and password");
+return;
+
+}
+
+try{
+
+const userCredential =
+await createUserWithEmailAndPassword(auth,email,password);
+
+const user = userCredential.user;
+
+
+/* CREATE USER DOCUMENT */
+
+await setDoc(doc(db,"users",user.uid),{
+
+email: email,
+role: "engineer",
+createdAt: serverTimestamp()
+
+});
+
+
+alert("Signup successful!");
+
+window.location.href="user-dashboard.html";
+
+
+}catch(error){
+
+console.error(error);
+alert(error.message);
+
+}
+
+}
+
+</script>
+
+</body>
+</html>

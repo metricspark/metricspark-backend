@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MetricSpark Manager Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(90deg,#0f2027,#203a43,#2c5364);
+    color: white;
+}
+
+.header {
+    padding: 15px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.3);
+}
+
+.container {
+    padding: 20px;
+}
+
+.kpi-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.kpi-card {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.card {
+    background: white;
+    color: black;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.logout {
+    float: right;
+    cursor: pointer;
+    color: #ff4d4d;
+}
+</style>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+// 🔐 Firebase Config
+const firebaseConfig = {
+    apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+    authDomain: "metricspark-1456b.firebaseapp.com",
+    projectId: "metricspark-1456b",
+    storageBucket: "metricspark-1456b.appspot.com",
+    messagingSenderId: "958626906247",
+    appId: "1:958626906247:web:0ed0f6ea8607e233e2b822"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+// 🔒 Protect page
+firebase.auth().onAuthStateChanged((user) => {
+    if (!user) {
+        window.location.href = "index.html";
+    }
+});
+
+// 🚪 Logout
+function logout() {
+    firebase.auth().signOut().then(() => {
+        window.location.href = "index.html";
+    });
+}
+
+// 🔥 YOUR LIVE BACKEND URL
+const API_URL = "https://metricspark-backend.onrender.com/tickets";
+
+// 🎫 Load Tickets + KPI
+async function loadTickets() {
+    const container = document.getElementById("tickets");
+
+    try {
+        container.innerHTML = "⏳ Loading tickets... (first load may take 10–15 sec)";
+
+        const res = await fetch(API_URL);
+
+        if (!res.ok) {
+            throw new Error("API not reachable");
+        }
+
+        const data = await res.json();
+
+        if (!data || !Array.isArray(data)) {
+            container.innerHTML = "❌ Invalid API response";
+            return;
+        }
+
+        if (data.length === 0) {
+            container.innerHTML = "<p>No tickets found</p>";
+        }
+
+        // 🎫 Total
+        document.getElementById("total").innerText = data.length;
+
+        // 🟢 Open
+        const openTickets = data.filter(
+            t => t.status?.name?.toLowerCase().includes("open")
+        );
+        document.getElementById("open").innerText = openTickets.length;
+
+        // 🔴 Closed
+        const closedTickets = data.filter(
+            t => t.status?.name?.toLowerCase().includes("closed")
+        );
+        document.getElementById("closed").innerText = closedTickets.length;
+
+        // ⏱ Avg Time
+        let totalTime = 0;
+        let resolvedCount = 0;
+
+        data.forEach(ticket => {
+            if (ticket.closedDate && ticket.dateEntered) {
+                const start = new Date(ticket.dateEntered);
+                const end = new Date(ticket.closedDate);
+                const diff = (end - start) / (1000 * 60 * 60);
+                totalTime += diff;
+                resolvedCount++;
+            }
+        });
+
+        const avg = resolvedCount ? (totalTime / resolvedCount).toFixed(2) : 0;
+        document.getElementById("avg").innerText = avg + " hrs";
+
+        // 🎫 Render tickets
+        container.innerHTML = data.map(ticket => `
+            <div class="card">
+                <strong>#${ticket.id} - ${ticket.summary}</strong><br><br>
+                Status: ${ticket.status?.name || "N/A"}<br>
+                Priority: ${ticket.priority?.name || "N/A"}<br>
+                Company: ${ticket.company?.name || "N/A"}
+            </div>
+        `).join("");
+
+    } catch (err) {
+        console.error(err);
+
+        container.innerHTML = `
+            ❌ Error loading tickets<br><br>
+            🔧 Possible reasons:<br>
+            - Backend not deployed<br>
+            - Wrong API URL<br>
+            - Render server sleeping<br>
+        `;
+    }
+}
+
+// 🚀 Run
+window.onload = loadTickets;
+</script>
+
+</head>
+
+<body>
+
+<div class="header">
+    MetricSpark Dashboard
+    <span class="logout" onclick="logout()">Logout</span>	
+</div>
+
+<div class="container">
+
+    <div class="kpi-container">
+        <div class="kpi-card">🎫 Total<br><span id="total">0</span></div>
+        <div class="kpi-card">🟢 Open<br><span id="open">0</span></div>
+        <div class="kpi-card">🔴 Closed<br><span id="closed">0</span></div>
+        <div class="kpi-card">⏱ Avg Time<br><span id="avg">0</span></div>
+    </div>
+
+    <h2>🎫 Service Tickets</h2>
+    <div id="tickets">Loading tickets...</div>
+
+</div>
+
+</body>
+</html>	
