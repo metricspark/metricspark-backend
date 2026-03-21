@@ -36,7 +36,6 @@ body {
     padding: 15px;
     border-radius: 10px;
     text-align: center;
-    font-size: 18px;
 }
 
 .card {
@@ -54,12 +53,11 @@ body {
 }
 </style>
 
-<!-- Firebase -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
 <script>
-// 🔐 Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
     authDomain: "metricspark-1456b.firebaseapp.com",
@@ -71,128 +69,154 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-// 🔒 Protect page
 firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-        window.location.href = "index.html";
-    }
+    if (!user) window.location.href = "index.html";
 });
 
-// 🚪 Logout
 function logout() {
     firebase.auth().signOut().then(() => {
         window.location.href = "index.html";
     });
 }
 
-// 🔥 YOUR LIVE BACKEND URL
 const API_URL = "https://metricspark-backend.onrender.com/tickets";
 
-// 🎫 Load Tickets + KPI
 async function loadTickets() {
-    const container = document.getElementById("tickets");
-
     try {
-        container.innerHTML = "⏳ Loading tickets... (first load may take 10–15 sec)";
+        let res = await fetch(API_URL);
 
-        const res = await fetch(API_URL);
-
+        // 🔁 Retry if Render sleeping
         if (!res.ok) {
-            throw new Error("API not reachable");
+            await new Promise(r => setTimeout(r, 3000));
+            res = await fetch(API_URL);
         }
 
         const data = await res.json();
 
-        if (!data || !Array.isArray(data)) {
-            container.innerHTML = "❌ Invalid API response";
+        console.log("DATA:", data); // debug
+
+        if (!Array.isArray(data)) {
+            document.getElementById("tickets").innerHTML = "❌ Invalid data from server";
             return;
         }
 
-        if (data.length === 0) {
-            container.innerHTML = "<p>No tickets found</p>";
-        }
+        const openTickets = data.filter(t => !t.closedDate);
 
-        // 🎫 Total
-        document.getElementById("total").innerText = data.length;
+        document.getElementById("total").innerText = openTickets.length;
 
-        // 🟢 Open
-        const openTickets = data.filter(
-            t => t.status?.name?.toLowerCase().includes("open")
-        );
-        document.getElementById("open").innerText = openTickets.length;
+        const boardData = {};
+        const engineerCounts = {};
 
-        // 🔴 Closed
-        const closedTickets = data.filter(
-            t => t.status?.name?.toLowerCase().includes("closed")
-        );
-        document.getElementById("closed").innerText = closedTickets.length;
+        openTickets.forEach(ticket => {
+            const board = ticket.board?.name || "Unknown";
+            const owner = ticket.owner?.name || "Unassigned";
 
-        // ⏱ Avg Time
-        let totalTime = 0;
-        let resolvedCount = 0;
+            if (!boardData[board]) {
+                boardData[board] = { count: 0, owners: {} };
+            }
 
-        data.forEach(ticket => {
-            if (ticket.closedDate && ticket.dateEntered) {
-                const start = new Date(ticket.dateEntered);
-                const end = new Date(ticket.closedDate);
-                const diff = (end - start) / (1000 * 60 * 60);
-                totalTime += diff;
-                resolvedCount++;
+            boardData[board].count++;
+            boardData[board].owners[owner] =
+                (boardData[board].owners[owner] || 0) + 1;
+
+            engineerCounts[owner] =
+                (engineerCounts[owner] || 0) + 1;
+        });
+
+        // Charts
+        if (window.boardChart) window.boardChart.destroy();
+        window.boardChart = new Chart(document.getElementById("boardChart"), {
+            type: "bar",
+            data: {
+                labels: Object.keys(boardData),
+                datasets: [{
+                    label: "Open Tickets per Board",
+                    data: Object.values(boardData).map(b => b.count)
+                }]
             }
         });
 
-        const avg = resolvedCount ? (totalTime / resolvedCount).toFixed(2) : 0;
-        document.getElementById("avg").innerText = avg + " hrs";
+        if (window.engineerChart) window.engineerChart.destroy();
+        window.engineerChart = new Chart(document.getElementById("engineerChart"), {
+            type: "bar",
+            data: {
+                labels: Object.keys(engineerCounts),
+                datasets: [{
+                    label: "Open Tickets per Engineer",
+                    data: Object.values(engineerCounts)
+                }]
+            }
+        });
 
-        // 🎫 Render tickets
-        container.innerHTML = data.map(ticket => `
-            <div class="card">
-                <strong>#${ticket.id} - ${ticket.summary}</strong><br><br>
-                Status: ${ticket.status?.name || "N/A"}<br>
-                Priority: ${ticket.priority?.name || "N/A"}<br>
-                Company: ${ticket.company?.name || "N/A"}
-            </div>
-        `).join("");
+        // Board Summary
+        document.getElementById("boardSummary").innerHTML =
+            Object.entries(boardData).map(([board, info]) => {
+                const ownersList = Object.entries(info.owners)
+                    .map(([o, c]) => `${o} (${c})`).join(", ");
+
+                return `
+                    <div class="card">
+                        <strong>🏢 ${board}</strong><br><br>
+                        🎫 Open Tickets: ${info.count}<br>
+                        👨‍💻 Owners: ${ownersList}
+                    </div>
+                `;
+            }).join("");
+
+        // Tickets
+        document.getElementById("tickets").innerHTML =
+            openTickets.map(ticket => {
+
+                let age = "N/A";
+                if (ticket.dateEntered) {
+                    const diff = Math.floor((new Date() - new Date(ticket.dateEntered)) / (1000*60*60*24));
+                    age = diff + " days";
+                }
+
+                return `
+                    <div class="card">
+                        <strong>#${ticket.id} - ${ticket.summary}</strong><br><br>
+                        👤 ${ticket.owner?.name || "Unassigned"}<br>
+                        🏢 ${ticket.board?.name || "N/A"}<br>
+                        ⏱ ${age}
+                    </div>
+                `;
+            }).join("");
 
     } catch (err) {
         console.error(err);
-
-        container.innerHTML = `
-            ❌ Error loading tickets<br><br>
-            🔧 Possible reasons:<br>
-            - Backend not deployed<br>
-            - Wrong API URL<br>
-            - Render server sleeping<br>
-        `;
+        document.getElementById("tickets").innerHTML = "❌ Backend not reachable";
     }
 }
 
-// 🚀 Run
 window.onload = loadTickets;
 </script>
-
 </head>
 
 <body>
 
 <div class="header">
     MetricSpark Dashboard
-    <span class="logout" onclick="logout()">Logout</span>	
+    <span class="logout" onclick="logout()">Logout</span>
 </div>
 
 <div class="container">
 
     <div class="kpi-container">
-        <div class="kpi-card">🎫 Total<br><span id="total">0</span></div>
-        <div class="kpi-card">🟢 Open<br><span id="open">0</span></div>
-        <div class="kpi-card">🔴 Closed<br><span id="closed">0</span></div>
-        <div class="kpi-card">⏱ Avg Time<br><span id="avg">0</span></div>
+        <div class="kpi-card">🎫 Open Tickets<br><span id="total">0</span></div>
     </div>
 
-    <h2>🎫 Service Tickets</h2>
+    <div style="display:flex; gap:20px; margin-bottom:20px;">
+        <canvas id="boardChart"></canvas>
+        <canvas id="engineerChart"></canvas>
+    </div>
+
+    <div id="boardSummary"></div>
+
+    <h2>🎫 Open Tickets</h2>
     <div id="tickets">Loading tickets...</div>
 
 </div>
 
 </body>
-</html>	
+</html>
