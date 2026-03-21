@@ -14,7 +14,7 @@ const cwConfig = {
     company: "milner",
     publicKey: "HESgPN5Lx1rzYk93".trim(),
     privateKey: "7q8WB6pQTSPq5uQe".trim(),
-    clientId: "milner"
+    clientId: "26729c0b-e5ed-489d-a639-886e993c2193"
 };
 
 /* ============================
@@ -24,9 +24,6 @@ const cwConfig = {
 function getAuthHeader() {
     const raw = `${cwConfig.company}+${cwConfig.publicKey}:${cwConfig.privateKey}`;
     const auth = Buffer.from(raw).toString("base64");
-
-    console.log("🔐 Auth generated"); // debug safe log
-
     return `Basic ${auth}`;
 }
 
@@ -45,8 +42,6 @@ app.get("/", (req, res) => {
 app.get("/tickets", async (req, res) => {
     try {
 
-        console.log("📡 Fetching tickets from ConnectWise...");
-
         const response = await fetch(
             `${cwConfig.url}/v4_6_release/apis/3.0/service/tickets?pageSize=25&orderBy=id desc`,
             {
@@ -54,17 +49,20 @@ app.get("/tickets", async (req, res) => {
                 headers: {
                     "Authorization": getAuthHeader(),
                     "clientId": cwConfig.clientId,
+                    "Accept": "application/json",
                     "Content-Type": "application/json"
                 }
             }
         );
 
-        const data = await response.json();
-
-        console.log("✅ Response received");
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            data = { error: "Invalid JSON response from API" };
+        }
 
         if (!response.ok) {
-            console.error("❌ ConnectWise Error:", data);
             return res.status(response.status).json({
                 error: "ConnectWise API Error",
                 details: data
@@ -74,8 +72,6 @@ app.get("/tickets", async (req, res) => {
         res.json(data);
 
     } catch (error) {
-
-        console.error("🔥 SERVER ERROR:", error);
 
         res.status(500).json({
             error: "Server Error",
