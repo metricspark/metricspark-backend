@@ -23,8 +23,7 @@ const cwConfig = {
 
 function getAuthHeader() {
     const raw = `${cwConfig.company}+${cwConfig.publicKey}:${cwConfig.privateKey}`;
-    const auth = Buffer.from(raw).toString("base64");
-    return `Basic ${auth}`;
+    return "Basic " + Buffer.from(raw).toString("base64");
 }
 
 /* ============================
@@ -43,7 +42,7 @@ app.get("/tickets", async (req, res) => {
     try {
 
         const response = await fetch(
-            `${cwConfig.url}/v4_6_release/apis/3.0/service/tickets?pageSize=25&orderBy=id desc`,
+            `${cwConfig.url}/v4_6_release/apis/3.0/service/tickets?pageSize=100&orderBy=id desc&fields=id,summary,status,priority,company,board,owner,closedDate,dateEntered`,
             {
                 method: "GET",
                 headers: {
@@ -55,12 +54,7 @@ app.get("/tickets", async (req, res) => {
             }
         );
 
-        let data;
-        try {
-            data = await response.json();
-        } catch {
-            data = { error: "Invalid JSON response from API" };
-        }
+        const data = await response.json();
 
         if (!response.ok) {
             return res.status(response.status).json({
@@ -72,12 +66,10 @@ app.get("/tickets", async (req, res) => {
         res.json(data);
 
     } catch (error) {
-
         res.status(500).json({
             error: "Server Error",
             message: error.message
         });
-
     }
 });
 
