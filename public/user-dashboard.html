@@ -8,80 +8,73 @@
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 
 <style>
-
 body{
 margin:0;
-font-family:Segoe UI;
-background:linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+font-family:'Inter','Segoe UI',sans-serif;
+background: linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
 }
 
 .header{
-background:#111827;
-color:white;
-padding:12px 25px;
 display:flex;
 justify-content:space-between;
 align-items:center;
+padding:16px 30px;
+background: rgba(0,0,0,0.35);
+color:white;
 }
 
-.logout-btn{
-background:#ef4444;
-color:white;
-border:none;
-padding:6px 12px;
-border-radius:4px;
+.header-right{
+display:flex;
+gap:10px;
+align-items:center;
 }
 
-.export-btn{
-background:#10b981;
-color:white;
+button{
 border:none;
-padding:6px 12px;
-border-radius:4px;
-margin-right:10px;
+padding:8px 14px;
+border-radius:8px;
+cursor:pointer;
 }
+
+.logout-btn{background:#ef4444;color:white;}
+.export-btn{background:#10b981;color:white;}
 
 .main{
-display:flex;
-gap:20px;
-padding:20px 30px;
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:24px;
+padding:24px;
 }
 
 .card{
 background:white;
-padding:16px;
-border-radius:10px;
-box-shadow:0 5px 20px rgba(0,0,0,0.25);
+padding:24px;
+border-radius:18px;
+box-shadow:0 20px 50px rgba(0,0,0,0.25);
 }
-
-.form-card{width:65%}
-.calendar-card{width:35%}
 
 .form-grid{
 display:grid;
 grid-template-columns:1fr 1fr;
-gap:10px 15px;
+gap:18px;
 }
 
-.form-grid input,
-.form-grid select{
-padding:6px;
-border:1px solid #ddd;
-border-radius:4px;
-}
+.full{grid-column:span 2;}
 
-.full{grid-column:span 2}
+input, select{
+height:48px;
+padding:0 14px;
+border-radius:12px;
+border:1px solid #e5e7eb;
+background:#f9fafb;
+}
 
 .save-btn{
+width:100%;
+height:48px;
 background:#2563eb;
 color:white;
-border:none;
-padding:8px;
-border-radius:4px;
-}
-
-.table-card{
-margin:20px 30px;
+border-radius:12px;
 }
 
 table{
@@ -92,141 +85,107 @@ border-collapse:collapse;
 th{
 background:#111827;
 color:white;
-padding:8px;
+padding:10px;
 }
 
 td{
-padding:7px;
-border-bottom:1px solid #ddd;
+padding:10px;
+border-bottom:1px solid #eee;
 text-align:center;
 }
 
-.action-btn{
-border:none;
-padding:4px 8px;
-border-radius:4px;
-color:white;
-}
-
-.edit{background:#2563eb}
-.delete{background:#ef4444}
-
+.edit-btn{background:#2563eb;color:white;padding:5px 8px;border-radius:6px;}
+.delete-btn{background:#ef4444;color:white;padding:5px 8px;border-radius:6px;}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-
-MetricSpark Productivity Tracker
-
-<div>
+MetricSpark Dashboard
+<div class="header-right">
+<span id="userEmail"></span>
 <button class="export-btn" id="exportBtn">Export</button>
 <button class="logout-btn" id="logoutBtn">Logout</button>
 </div>
-
 </div>
 
 <div class="main">
 
-<div class="card form-card">
-
+<div class="card">
 <h3>Daily Work Entry</h3>
 
 <div class="form-grid">
 
-<label>Date</label>
-<label>Name</label>
-
 <input type="date" id="date">
-<input type="text" id="name" readonly>
 
-<label>Status</label>
-<label>Manager</label>
+<select id="engineerName">
+<option value="">Select Engineer</option>
+<option>Tianna</option>
+<option>Kundan</option>
+<option>Valor</option>
+<option>Aman</option>
+<option>Dexter</option>
+<option>Junaid</option>
+<option>Maxwell</option>
+<option>Palak</option>
+<option>Verney</option>
+</select>
 
 <select id="status">
-<option value="">Select</option>
-<option value="Working">Working</option>
-<option value="PTO">PTO</option>
-<option value="Week Off">Week Off</option>
+<option value="">Status</option>
+<option>Working</option>
+<option>PTO</option>
+<option>Week Off</option>
 </select>
 
 <select id="manager">
-<option value="">Select Manager</option>
-<option>Anderson</option>
+<option value="">Manager</option>
+<option>Aman Thakur</option>
 <option>Akhilesh</option>
 <option>Kip</option>
+<option>Ash</option>
+<option>Amit</option>
 </select>
 
-<label>Billable</label>
-<label>Non Billable</label>
+<input type="number" id="billable" placeholder="Billable">
+<input type="number" id="nonbillable" placeholder="Non Billable">
 
-<input type="number" id="billable">
-<input type="number" id="nonbillable">
+<input type="number" id="tickets" placeholder="Tickets">
+<input type="number" id="closed" placeholder="Closed">
 
-<label>Tickets</label>
-<label>Closed</label>
+<input type="number" id="escalated" placeholder="Escalated">
+<input type="number" id="waiting" placeholder="Waiting">
 
-<input type="number" id="tickets">
-<input type="number" id="closed">
-
-<label>Escalated</label>
-<label>Waiting</label>
-
-<input type="number" id="escalated">
-<input type="number" id="waiting">
-
-<label>Scheduled</label>
-<label></label>
-
-<input type="number" id="scheduled">
+<input type="number" id="scheduled" placeholder="Scheduled">
 <div></div>
 
-<label class="full">Comment</label>
-<input type="text" id="comment" class="full">
+<input type="text" id="comment" placeholder="Comment" class="full">
 
 <button class="save-btn full" id="saveBtn">Save Entry</button>
 
 </div>
-
 </div>
 
-<div class="card calendar-card">
-
+<div class="card">
 <h3>Work Calendar</h3>
 <div id="calendar"></div>
-
 </div>
 
 </div>
 
-<div class="card table-card">
-
+<div class="card" style="margin:20px;">
 <h3>Submitted Entries</h3>
-
 <table>
-
 <thead>
 <tr>
-<th>Date</th>
-<th>Name</th>
-<th>Status</th>
-<th>Billable</th>
-<th>Non Billable</th>
-<th>Tickets</th>
-<th>Closed</th>
-<th>Escalated</th>
-<th>Waiting</th>
-<th>Scheduled</th>
-<th>Comment</th>
-<th>Action</th>
+<th>Date</th><th>Engineer</th><th>Status</th><th>Billable</th>
+<th>Non Billable</th><th>Tickets</th><th>Closed</th>
+<th>Escalated</th><th>Waiting</th><th>Scheduled</th><th>Comment</th><th>Action</th>
 </tr>
 </thead>
-
 <tbody id="dataTable"></tbody>
-
 </table>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
@@ -235,9 +194,9 @@ MetricSpark Productivity Tracker
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore,collection,addDoc,getDocs,query,where,doc,updateDoc,deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore,collection,addDoc,getDocs,doc,updateDoc,deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig={
+const firebaseConfig = {
 apiKey:"AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
 authDomain:"metricspark-1456b.firebaseapp.com",
 projectId:"metricspark-1456b",
@@ -246,232 +205,178 @@ messagingSenderId:"958626906247",
 appId:"1:958626906247:web:0ed0f6ea8607e233e2b822"
 };
 
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-let calendar;
-let editId=null;
+const emailMap = {
+"aman.thakur@itbd.net":"Aman Thakur"
+};
+
+const engineerName = document.getElementById("engineerName");
+const saveBtn = document.getElementById("saveBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const exportBtn = document.getElementById("exportBtn");
+const userEmailSpan = document.getElementById("userEmail");
+
+const dateInput = document.getElementById("date");
+const status = document.getElementById("status");
+const manager = document.getElementById("manager");
+const billable = document.getElementById("billable");
+const nonbillable = document.getElementById("nonbillable");
+const tickets = document.getElementById("tickets");
+const closed = document.getElementById("closed");
+const escalated = document.getElementById("escalated");
+const waiting = document.getElementById("waiting");
+const scheduled = document.getElementById("scheduled");
+const comment = document.getElementById("comment");
+const dataTable = document.getElementById("dataTable");
+
+let editId = null;
 
 /* AUTH */
-
 onAuthStateChanged(auth,(user)=>{
-if(!user){
-window.location.href="index.html";
-return;
+if(user){
+userEmailSpan.textContent = user.email;
+if(emailMap[user.email]){
+engineerName.value = emailMap[user.email];
 }
-document.getElementById("name").value=user.email;
+}else{
+window.location.href="index.html";
+}
 });
 
-
 /* LOGOUT */
-
-document.getElementById("logoutBtn").onclick=async()=>{
+logoutBtn.onclick = async ()=>{
 await signOut(auth);
 window.location.href="index.html";
 };
 
+/* SAVE */
+saveBtn.onclick = async () => {
 
-/* SAVE ENTRY */
-
-document.getElementById("saveBtn").onclick=async()=>{
-
-const date=dateInput.value;
-const name=nameInput.value;
-const status=status.value;
-const manager=manager.value;
-const escalated=escalatedInput.value;
-const waiting=waitingInput.value;
-const scheduled=scheduledInput.value;
-const comment=commentInput.value;
-
-/* REQUIRED VALIDATION */
-
-if(!date || !status || !manager || !escalated || !waiting || !scheduled || !comment){
-alert("Please fill all mandatory fields.");
+if(!engineerName.value){
+alert("Select Engineer");
 return;
 }
 
-/* DUPLICATE CHECK */
-
-const q=query(collection(db,"worklog"),
-where("date","==",date),
-where("name","==",name));
-
-const existing=await getDocs(q);
-
-if(!existing.empty && !editId){
-
-if(confirm("Entry already exists. Edit it?")){
-editId=existing.docs[0].id;
-loadForm(existing.docs[0].data());
-return;
-}
-
-}
-
-const entry={
-date,
-name,
-status,
-manager,
-billable:billable.value || 0,
-nonbillable:nonbillable.value || 0,
-tickets:tickets.value || 0,
-closed:closed.value || 0,
-escalated,
-waiting,
-scheduled,
-comment
+const entry = {
+date:dateInput.value,
+engineerName: engineerName.value,
+name: auth.currentUser.email,
+status:status.value,
+manager:manager.value,
+billable:Number(billable.value),
+nonbillable:Number(nonbillable.value),
+tickets:Number(tickets.value),
+closed:Number(closed.value),
+escalated:Number(escalated.value),
+waiting:Number(waiting.value),
+scheduled:Number(scheduled.value),
+comment:comment.value
 };
 
 if(editId){
-
-await updateDoc(doc(db,"worklog",editId),entry);
+await updateDoc(doc(db,"worklog",editId), entry);
 editId=null;
-
 }else{
-
-await addDoc(collection(db,"worklog"),entry);
-
+await addDoc(collection(db,"worklog"), entry);
 }
 
 loadData();
-
 };
 
-
-/* LOAD DATA */
-
+/* LOAD */
 async function loadData(){
-
-const snapshot=await getDocs(collection(db,"worklog"));
-
+const snap = await getDocs(collection(db,"worklog"));
 dataTable.innerHTML="";
+const currentUser = auth.currentUser?.email;
 
-if(calendar) calendar.removeAllEvents();
+snap.forEach(docSnap=>{
+const x = docSnap.data();
+const id = docSnap.id;
 
-const currentUser=auth.currentUser.email;
+let actions="-";
 
-snapshot.forEach(docSnap=>{
-
-const d=docSnap.data();
-
-let action=`<span style="color:gray">View</span>`;
-
-if(d.name===currentUser){
-
-action=`
-<button class="action-btn edit" onclick="editEntry('${docSnap.id}')">Edit</button>
-<button class="action-btn delete" onclick="deleteEntry('${docSnap.id}')">Delete</button>
-`;
-
+if(x.name===currentUser){
+actions=`<button onclick="editEntry('${id}')">Edit</button>
+<button onclick="deleteEntry('${id}')">Delete</button>`;
 }
 
 dataTable.innerHTML+=`
 <tr>
-<td>${d.date}</td>
-<td>${d.name}</td>
-<td>${d.status}</td>
-<td>${d.billable}</td>
-<td>${d.nonbillable}</td>
-<td>${d.tickets}</td>
-<td>${d.closed}</td>
-<td>${d.escalated}</td>
-<td>${d.waiting}</td>
-<td>${d.scheduled}</td>
-<td>${d.comment}</td>
-<td>${action}</td>
-</tr>
-`;
-
-if(calendar && d.status!=="Working"){
-
-calendar.addEvent({
-title:d.status,
-start:d.date,
-color:d.status==="PTO"?"#facc15":"#3b82f6"
+<td>${x.date}</td>
+<td>${x.engineerName}</td>
+<td>${x.status}</td>
+<td>${x.billable}</td>
+<td>${x.nonbillable}</td>
+<td>${x.tickets}</td>
+<td>${x.closed}</td>
+<td>${x.escalated}</td>
+<td>${x.waiting}</td>
+<td>${x.scheduled}</td>
+<td>${x.comment}</td>
+<td>${actions}</td>
+</tr>`;
 });
-
 }
-
-});
-
-}
-
-
-/* DELETE */
-
-window.deleteEntry=async(id)=>{
-
-const snapshot=await getDocs(collection(db,"worklog"));
-
-let entryData;
-
-snapshot.forEach(d=>{
-if(d.id===id){
-entryData=d.data();
-}
-});
-
-if(entryData.name!==auth.currentUser.email){
-alert("You can only delete your own entries.");
-return;
-}
-
-if(confirm("Delete entry?")){
-
-await deleteDoc(doc(db,"worklog",id));
-loadData();
-
-}
-
-};
-
 
 /* EXPORT */
+exportBtn.onclick = async ()=>{
+const snap = await getDocs(collection(db,"worklog"));
 
-exportBtn.onclick=async()=>{
+let csv="Date,Engineer,Status,Billable,NonBillable,Tickets,Closed,Escalated,Waiting,Scheduled,Comment\n";
 
-const snapshot=await getDocs(collection(db,"worklog"));
-
-let csv="Date,Name,Status,Billable,NonBillable,Tickets,Closed,Escalated,Waiting,Scheduled,Comment\n";
-
-snapshot.forEach(doc=>{
-const d=doc.data();
-csv+=`${d.date},${d.name},${d.status},${d.billable},${d.nonbillable},${d.tickets},${d.closed},${d.escalated},${d.waiting},${d.scheduled},${d.comment}\n`;
+snap.forEach(doc=>{
+const x=doc.data();
+csv+=`${x.date},${x.engineerName},${x.status},${x.billable},${x.nonbillable},${x.tickets},${x.closed},${x.escalated},${x.waiting},${x.scheduled},${x.comment}\n`;
 });
 
-const blob=new Blob([csv]);
+const blob=new Blob([csv],{type:"text/csv"});
 const url=URL.createObjectURL(blob);
-
 const a=document.createElement("a");
 a.href=url;
-a.download="metricspark_report.csv";
+a.download="MetricSpark_Data.csv";
 a.click();
-
 };
 
-
-/* CALENDAR */
-
-document.addEventListener("DOMContentLoaded",()=>{
-
-const calendarEl=document.getElementById("calendar");
-
-calendar=new FullCalendar.Calendar(calendarEl,{
-initialView:"dayGridMonth",
-height:350,
-dateClick:(info)=>{
-document.getElementById("date").value=info.dateStr;
+/* EDIT */
+window.editEntry = async(id)=>{
+const snap = await getDocs(collection(db,"worklog"));
+snap.forEach(docSnap=>{
+if(docSnap.id===id){
+const d=docSnap.data();
+dateInput.value=d.date;
+engineerName.value=d.engineerName;
+status.value=d.status;
+manager.value=d.manager;
+billable.value=d.billable;
+nonbillable.value=d.nonbillable;
+tickets.value=d.tickets;
+closed.value=d.closed;
+escalated.value=d.escalated;
+waiting.value=d.waiting;
+scheduled.value=d.scheduled;
+comment.value=d.comment;
+editId=id;
 }
+});
+};
+
+/* DELETE */
+window.deleteEntry = async(id)=>{
+if(!confirm("Delete?")) return;
+await deleteDoc(doc(db,"worklog",id));
+loadData();
+};
+
+const calendar=new FullCalendar.Calendar(document.getElementById("calendar"),{
+initialView:"dayGridMonth",
+dateClick:(info)=> dateInput.value=info.dateStr
 });
 
 calendar.render();
-
 loadData();
-
-});
 
 </script>
 

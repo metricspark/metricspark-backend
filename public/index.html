@@ -1,117 +1,154 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
 <meta charset="UTF-8">
-<title>MetricSpark Login</title>
+<title>MetricSpark</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-
 body{
 margin:0;
-font-family:Arial, Helvetica, sans-serif;
-
-/* BACKGROUND */
-background:linear-gradient(135deg,#0b1f4a,#122b63,#1d3f8a);
-
+font-family:'Segoe UI',sans-serif;
 height:100vh;
 display:flex;
 align-items:center;
 justify-content:center;
+background: linear-gradient(-45deg,#0b1f4a,#122b63,#1d3f8a,#0b1f4a);
+background-size:400% 400%;
+animation: gradientMove 12s ease infinite;
 }
 
-/* LOGIN CARD */
+@keyframes gradientMove {
+0% { background-position: 0% 50%; }
+50% { background-position: 100% 50%; }
+100% { background-position: 0% 50%; }
+}
 
 .container{
 width:420px;
-background:#f5f6f8;
 padding:40px;
-border-radius:18px;
-box-shadow:0 15px 40px rgba(0,0,0,0.25);
+border-radius:20px;
+background: rgba(255,255,255,0.1);
+backdrop-filter: blur(18px);
+box-shadow: 0 30px 80px rgba(0,0,0,0.5);
 text-align:center;
+color:white;
+}
+
+/* 🔥 3D LOGO WRAPPER */
+.logo-wrap{
+perspective:1000px;
+margin-bottom:15px;
 }
 
 .logo{
-width:240px;
-margin-bottom:30px;
+width:350px; /* ✅ increased size */
 display:block;
-margin-left:auto;
-margin-right:auto;
+margin:auto;
+transition: transform 0.2s ease;
+transform-style: preserve-3d;
 }
 
-/* TABS */
+/* LIGHT SWEEP */
+.logo-wrap::after{
+content:"";
+position:absolute;
+width:200%;
+height:200%;
+top:-50%;
+left:-50%;
+background: linear-gradient(120deg,transparent 40%,rgba(255,255,255,0.4),transparent 60%);
+transform: rotate(25deg);
+opacity:0;
+pointer-events:none;
+}
 
+.logo-wrap:hover::after{
+animation: shine 1s ease;
+opacity:1;
+}
+
+@keyframes shine{
+0%{transform:translateX(-100%) rotate(25deg);}
+100%{transform:translateX(100%) rotate(25deg);}
+}
+
+.brand{
+font-size:36px;
+font-weight:700;
+margin-bottom:10px;
+}
+
+.tagline{
+font-size:12px;
+letter-spacing:2px;
+margin-bottom:20px;
+color:#cfe2ff;
+}
+
+/* 🔥 PERFECT ALIGNMENT */
 .tabs{
 display:flex;
-gap:10px;
-margin-bottom:20px;
+gap:12px;
+margin-bottom:15px;
 }
 
 .tabs button{
 flex:1;
-padding:12px;
+height:50px;
 border:none;
-background:#d9d9d9;
-font-weight:bold;
-cursor:pointer;
-border-radius:8px;
-}
-
-.tabs button:hover{
-background:#c9c9c9;
-}
-
-/* INPUT */
-
-input{
-width:100%;
-padding:14px;
-margin-bottom:14px;
-border-radius:10px;
-border:1px solid #ccc;
-font-size:14px;
-}
-
-/* BUTTON */
-
-#loginBtn{
-width:100%;
-padding:14px;
-background:#2d63d3;
+border-radius:12px;
+background:rgba(255,255,255,0.15);
 color:white;
-border:none;
-border-radius:10px;
-font-size:16px;
-font-weight:bold;
 cursor:pointer;
+font-weight:500;
 }
 
-#loginBtn:hover{
-background:#1f4fb4;
+/* INPUT + BUTTON SAME SIZE */
+input, .main-btn{
+width:100%;
+height:50px;
+padding:0 16px;
+border-radius:12px;
+border:none;
+background:rgba(255,255,255,0.15);
+color:white;
+margin-bottom:14px;
+font-size:15px;
 }
 
-/* LINK */
+input:focus{
+outline:none;
+background:rgba(255,255,255,0.25);
+}
+
+/* PRIMARY BUTTON */
+.main-btn{
+background: linear-gradient(90deg,#2d63d3,#5a8dff);
+cursor:pointer;
+font-weight:600;
+}
 
 a{
 display:block;
-margin-top:12px;
-font-size:14px;
-color:#2d63d3;
+margin-top:10px;
+color:#8ec5ff;
 cursor:pointer;
-text-decoration:none;
 }
-
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-<img src="assets/metricspark-logo.png" class="logo">
+<div class="logo-wrap">
+<img src="assets/logo-icon.png" class="logo" id="logo">
+</div>
+
+<div class="brand">MetricSpark</div>
+<div class="tagline">AI ANALYTICS ENGINE</div>
 
 <div class="tabs">
 <button id="loginTab">Sign In</button>
@@ -119,10 +156,9 @@ text-decoration:none;
 </div>
 
 <input id="email" type="email" placeholder="Email">
-
 <input id="password" type="password" placeholder="Password">
 
-<button id="loginBtn">Sign In</button>
+<button id="loginBtn" class="main-btn">Sign In</button>
 
 <a id="forgotPassword">Forgot Password?</a>
 
@@ -131,38 +167,22 @@ text-decoration:none;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore,doc,setDoc,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { 
-getAuth,
-signInWithEmailAndPassword,
-createUserWithEmailAndPassword,
-sendPasswordResetEmail,
-onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import {
-getFirestore,
-doc,
-setDoc,
-getDoc,
-serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-
+/* FIREBASE */
 const firebaseConfig = {
-apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
-authDomain: "metricspark-1456b.firebaseapp.com",
-projectId: "metricspark-1456b",
-storageBucket: "metricspark-1456b.appspot.com",
-messagingSenderId: "958626906247",
-appId: "1:958626906247:web:0ed0f6ea8607e233e2b822"
+apiKey:"AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+authDomain:"metricspark-1456b.firebaseapp.com",
+projectId:"metricspark-1456b",
+storageBucket:"metricspark-1456b.appspot.com",
+messagingSenderId:"958626906247",
+appId:"1:958626906247:web:0ed0f6ea8607e233e2b822"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
 
 const loginBtn = document.getElementById("loginBtn");
 const emailInput = document.getElementById("email");
@@ -173,156 +193,89 @@ const loginTab = document.getElementById("loginTab");
 const forgotPassword = document.getElementById("forgotPassword");
 
 let isSignUp = false;
+let isRedirecting = false;
 
+/* 🔥 3D LOGO INTERACTION */
+const logo = document.getElementById("logo");
+
+document.querySelector(".logo-wrap").addEventListener("mousemove",(e)=>{
+const rect = e.currentTarget.getBoundingClientRect();
+const x = (e.clientX - rect.left)/rect.width - 0.5;
+const y = (e.clientY - rect.top)/rect.height - 0.5;
+
+logo.style.transform = `rotateX(${y*-20}deg) rotateY(${x*20}deg) scale(1.1)`;
+});
+
+document.querySelector(".logo-wrap").addEventListener("mouseleave",()=>{
+logo.style.transform = "rotateX(0) rotateY(0) scale(1)";
+});
 
 /* TAB SWITCH */
-
 loginTab.onclick = () => {
-
 isSignUp = false;
 loginBtn.textContent = "Sign In";
-
 };
 
 signupTab.onclick = () => {
-
 isSignUp = true;
 loginBtn.textContent = "Sign Up";
-
 };
 
-
-/* LOGIN / SIGNUP */
-
+/* LOGIN */
 loginBtn.onclick = async () => {
 
 const email = emailInput.value.trim();
 const password = passwordInput.value.trim();
 
 if(!email || !password){
-
 alert("Enter email and password");
 return;
-
 }
+
+loginBtn.textContent = "Processing...";
+loginBtn.disabled = true;
 
 try{
 
 if(isSignUp){
+const userCred = await createUserWithEmailAndPassword(auth,email,password);
 
-const userCredential =
-await createUserWithEmailAndPassword(auth,email,password);
-
-const user = userCredential.user;
-
-await setDoc(doc(db,"users",user.uid),{
-
+await setDoc(doc(db,"users",userCred.user.uid),{
 email: email,
 role: "engineer",
 createdAt: serverTimestamp()
-
 });
 
 alert("Account created");
-
-window.location.href="user-dashboard.html";
-
 }else{
-
-const userCredential =
 await signInWithEmailAndPassword(auth,email,password);
+}
 
-const user = userCredential.user;
-
-const docRef = doc(db,"users",user.uid);
-const docSnap = await getDoc(docRef);
-
-if(docSnap.exists()){
-
-const role = docSnap.data().role;
-
-if(role==="manager"){
-
-window.location.href="manager-dashboard.html";
-
-}else{
-
+isRedirecting = true;
 window.location.href="user-dashboard.html";
 
+}catch(err){
+alert(err.message);
 }
 
-}else{
-
-window.location.href="user-dashboard.html";
-
-}
-
-}
-
-}catch(error){
-
-console.error(error);
-alert(error.message);
-
-}
+loginBtn.textContent = isSignUp ? "Sign Up" : "Sign In";
+loginBtn.disabled = false;
 
 };
 
-
-/* PASSWORD RESET */
-
-forgotPassword.onclick = async () => {
-
+/* RESET */
+forgotPassword.onclick = async ()=>{
 const email = emailInput.value.trim();
-
-if(!email){
-
-alert("Enter your email first");
-return;
-
-}
-
-try{
-
+if(!email) return alert("Enter email first");
 await sendPasswordResetEmail(auth,email);
-alert("Password reset email sent");
-
-}catch(error){
-
-alert(error.message);
-
-}
-
+alert("Reset email sent");
 };
-
 
 /* AUTO LOGIN */
-
-onAuthStateChanged(auth, async(user)=>{
-
-if(user){
-
-const docRef = doc(db,"users",user.uid);
-const docSnap = await getDoc(docRef);
-
-if(docSnap.exists()){
-
-const role = docSnap.data().role;
-
-if(role==="manager"){
-
-window.location.href="manager-dashboard.html";
-
-}else{
-
+onAuthStateChanged(auth,(user)=>{
+if(user && !isRedirecting){
 window.location.href="user-dashboard.html";
-
 }
-
-}
-
-}
-
 });
 
 </script>
