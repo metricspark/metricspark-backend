@@ -4,25 +4,20 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
 
-/* ============================
-   CONFIG
-============================ */
+/* ================= CONFIG ================= */
 
 const cwConfig = {
-    url: "https://cw.milnertechnologyservices.net",
-    company: "milner",
-    publicKey: "HESgPN5Lx1rzYk93".trim(),
-    privateKey: "7q8WB6pQTSPq5uQe".trim(),
-    clientId: "26729c0b-e5ed-489d-a639-886e993c2193"
+    url: "https://api-na.myconnectwise.net",
+    company: "YOUR_COMPANY",
+    publicKey: "YOUR_PUBLIC_KEY",
+    privateKey: "YOUR_PRIVATE_KEY",
+    clientId: "YOUR_CLIENT_ID"
 };
 
-const API_TOKEN = "metricspark123";
+const TOKEN = "metricspark123";
 
-/* ============================
-   AUTH
-============================ */
+/* ================= AUTH ================= */
 
 function getAuthHeader() {
     const raw = `${cwConfig.company}+${cwConfig.publicKey}:${cwConfig.privateKey}`;
@@ -32,38 +27,20 @@ function getAuthHeader() {
 app.use((req, res, next) => {
     if (req.path === "/") return next();
 
-    const token = req.headers.authorization;
-
-    if (!token || token !== `Bearer ${API_TOKEN}`) {
+    if (req.headers.authorization !== `Bearer ${TOKEN}`) {
         return res.status(403).json({ error: "Unauthorized" });
     }
 
     next();
 });
 
-/* ============================
-   TEST
-============================ */
+/* ================= TEST ================= */
 
 app.get("/", (req, res) => {
     res.send("🚀 Backend Running");
 });
 
-/* ============================
-   HELPER
-============================ */
-
-function getTicketAge(dateEntered) {
-    if (!dateEntered) return "N/A";
-    const created = new Date(dateEntered);
-    const now = new Date();
-    const diff = Math.floor((now - created) / (1000 * 60 * 60 * 24));
-    return `${diff} days`;
-}
-
-/* ============================
-   MAIN API
-============================ */
+/* ================= TICKETS API ================= */
 
 app.get("/tickets", async (req, res) => {
     try {
@@ -71,10 +48,8 @@ app.get("/tickets", async (req, res) => {
         let page = 1;
 
         while (true) {
-            console.log("Fetching page:", page);
-
             const response = await fetch(
-                `${cwConfig.url}/v4_6_release/apis/3.0/service/tickets?page=${page}&pageSize=100&conditions=status/name!="Closed"&fields=id,summary,status,priority,company,board,resources,owner,dateEntered`,
+                `${cwConfig.url}/v4_6_release/apis/3.0/service/tickets?page=${page}&pageSize=100&conditions=status/name!="Closed"`,
                 {
                     headers: {
                         Authorization: getAuthHeader(),
@@ -92,74 +67,47 @@ app.get("/tickets", async (req, res) => {
             page++;
         }
 
-        /* ===== FILTER BOARDS ===== */
-
-        const allowedBoards = [
-            "HelpDesk IT",
-            "Triage",
-            "Backups",
-            "Command Alerts",
-            "AutoElevate",
-            "Auvik",
-            "Ninja RMM"
-        ];
-
         const boardMap = {};
         const ownerMap = {};
 
-        const tickets = allTickets
-            .filter(t => {
-                const boardName = (t.board?.name || "").toLowerCase();
-                return allowedBoards.some(b =>
-                    boardName.includes(b.toLowerCase())
-                );
-            })
-            .map(t => {
-                const board = t.board?.name || "Unknown";
+        const tickets = allTickets.map(t => {
 
-                let owner = "Unassigned";
+            const board = t.board?.name || "Unknown";
 
-                if (Array.isArray(t.resources) && t.resources.length > 0) {
-                    owner = t.resources.map(r => r.name).join(", ");
-                } else if (t.owner && t.owner.name) {
-                    owner = t.owner.name;
-                }
+            let owner = "Unassigned";
+            if (t.resources?.length) {
+                owner = t.resources.map(r => r.name).join(", ");
+            }
 
-                boardMap[board] = (boardMap[board] || 0) + 1;
+            boardMap[board] = (boardMap[board] || 0) + 1;
 
-                owner.split(", ").forEach(o => {
-                    ownerMap[o] = (ownerMap[o] || 0) + 1;
-                });
-
-                return {
-                    id: t.id,
-                    summary: t.summary,
-                    status: t.status?.name || "N/A",
-                    priority: t.priority?.name || "N/A",
-                    company: t.company?.name || "N/A",
-                    board,
-                    owner,
-                    age: getTicketAge(t.dateEntered)
-                };
+            owner.split(", ").forEach(o => {
+                ownerMap[o] = (ownerMap[o] || 0) + 1;
             });
 
-        const boards = Object.entries(boardMap).map(([name, count]) => ({ name, count }));
-        const owners = Object.entries(ownerMap).map(([name, count]) => ({ name, count }));
+            return {
+                id: t.id,
+                summary: t.summary,
+                status: t.status?.name,
+                priority: t.priority?.name,
+                board,
+                owner,
+                age: Math.floor((new Date() - new Date(t.dateEntered)) / 86400000)
+            };
+        });
 
-        res.json({ boards, owners, tickets });
+        res.json({
+            boards: Object.entries(boardMap).map(([name,count])=>({name,count})),
+            owners: Object.entries(ownerMap).map(([name,count])=>({name,count})),
+            tickets
+        });
 
     } catch (err) {
-        console.error("❌ ERROR:", err);
-        res.status(500).json({ error: "Server error" });
+        console.error(err);
+        res.status(500).json({ error: "ConnectWise fetch failed" });
     }
 });
 
-/* ============================
-   START
-============================ */
+/* ================= START ================= */
 
-const PORT = 5000;
-
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+app.listen(5000, () => console.log("🚀 Server running on port 5000"));
