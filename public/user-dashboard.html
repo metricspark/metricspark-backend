@@ -37,7 +37,6 @@ cursor:pointer;
 }
 
 .logout-btn{background:#ef4444;color:white;}
-.export-btn{background:#10b981;color:white;}
 
 .main{
 display:grid;
@@ -101,8 +100,7 @@ text-align:center;
 <div class="header">
 MetricSpark Dashboard
 <div class="header-right">
-<span id="userEmail"></span>
-<button class="export-btn" id="exportBtn">Export</button>
+<span id="userName"></span>
 <button class="logout-btn" id="logoutBtn">Logout</button>
 </div>
 </div>
@@ -118,15 +116,15 @@ MetricSpark Dashboard
 
 <select id="engineerName">
 <option value="">Select Engineer</option>
-<option>Tianna</option>
+<option>Aman</option>
 <option>Kundan</option>
 <option>Valor</option>
-<option>Aman</option>
-<option>Dexter</option>
-<option>Junaid</option>
+<option>Tianna</option>
 <option>Maxwell</option>
-<option>Palak</option>
 <option>Verney</option>
+<option>Junaid</option>
+<option>Dexter</option>
+<option>Palak</option>
 </select>
 
 <select id="status">
@@ -191,90 +189,104 @@ MetricSpark Dashboard
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore,collection,addDoc,getDocs,doc,updateDoc,deleteDoc,query,where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore,collection,addDoc,doc,updateDoc,deleteDoc,query,where,onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey:"AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
 authDomain:"metricspark-1456b.firebaseapp.com",
-projectId:"metricspark-1456b",
-storageBucket:"metricspark-1456b.appspot.com",
-messagingSenderId:"958626906247",
-appId:"1:958626906247:web:0ed0f6ea8607e233e2b822"
+projectId:"metricspark-1456b"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const emailMap = {
-"aman.thakur@itbd.net":"Aman Thakur"
-};
-
-const engineerName = document.getElementById("engineerName");
-const saveBtn = document.getElementById("saveBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const exportBtn = document.getElementById("exportBtn");
-const userEmailSpan = document.getElementById("userEmail");
-
-const dateInput = document.getElementById("date");
-const status = document.getElementById("status");
-const manager = document.getElementById("manager");
-const billable = document.getElementById("billable");
-const nonbillable = document.getElementById("nonbillable");
-const tickets = document.getElementById("tickets");
-const closed = document.getElementById("closed");
-const escalated = document.getElementById("escalated");
-const waiting = document.getElementById("waiting");
-const scheduled = document.getElementById("scheduled");
-const comment = document.getElementById("comment");
-const dataTable = document.getElementById("dataTable");
-
+let currentUser = null;
+let currentName = "";
 let editId = null;
+let unsubscribe = null;
 
-/* AUTH */
 onAuthStateChanged(auth,(user)=>{
 if(user){
-userEmailSpan.textContent = user.email;
-if(emailMap[user.email]){
-engineerName.value = emailMap[user.email];
-}
-loadData();
+currentUser = user;
+
+// ✅ Convert email to Proper Name
+let emailName = user.email.split("@")[0];
+currentName = emailName
+    .split(".")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+// ✅ Header
+document.getElementById("userName").textContent = currentName;
+
+// ✅ Engineer dropdown ONLY this name
+const engineerDropdown = document.getElementById("engineerName");
+engineerDropdown.innerHTML = "";
+
+const option = document.createElement("option");
+option.value = currentName;
+option.text = currentName;
+engineerDropdown.appendChild(option);
+
+engineerDropdown.value = currentName;
+
+startRealtime();
 }else{
 window.location.href="index.html";
 }
 });
 
-/* LOGOUT */
-logoutBtn.onclick = async ()=>{
-await signOut(auth);
-window.location.href="index.html";
-};
+function startRealtime(){
+if(unsubscribe) unsubscribe();
 
-/* SAVE */
-saveBtn.onclick = async () => {
+const q = query(collection(db,"worklog"), where("userId","==",currentUser.uid));
 
-const user = auth.currentUser;
+unsubscribe = onSnapshot(q,(snap)=>{
+const table = document.getElementById("dataTable");
+table.innerHTML="";
 
-if(!engineerName.value){
-alert("Select Engineer");
-return;
+snap.forEach(docSnap=>{
+const x = docSnap.data();
+const id = docSnap.id;
+
+table.innerHTML+=`
+<tr>
+<td>${x.date||""}</td>
+<td>${x.engineerName||""}</td>
+<td>${x.status||""}</td>
+<td>${x.billable||0}</td>
+<td>${x.nonbillable||0}</td>
+<td>${x.tickets||0}</td>
+<td>${x.closed||0}</td>
+<td>${x.escalated||0}</td>
+<td>${x.waiting||0}</td>
+<td>${x.scheduled||0}</td>
+<td>${x.comment||""}</td>
+<td>
+<button onclick="editEntry('${id}')">Edit</button>
+<button onclick="deleteEntry('${id}')">Delete</button>
+</td>
+</tr>`;
+});
+});
 }
 
+document.getElementById("saveBtn").onclick = async ()=>{
 const entry = {
-userId: user.uid,
-date:dateInput.value,
-engineerName: engineerName.value,
-name: user.email,
-status:status.value,
-manager:manager.value,
-billable:Number(billable.value || 0),
-nonbillable:Number(nonbillable.value || 0),
-tickets:Number(tickets.value || 0),
-closed:Number(closed.value || 0),
-escalated:Number(escalated.value || 0),
-waiting:Number(waiting.value || 0),
-scheduled:Number(scheduled.value || 0),
-comment:comment.value
+userId: currentUser.uid,
+engineerName: currentName,
+date: document.getElementById("date").value,
+status: document.getElementById("status").value,
+manager: document.getElementById("manager").value,
+billable:Number(document.getElementById("billable").value||0),
+nonbillable:Number(document.getElementById("nonbillable").value||0),
+tickets:Number(document.getElementById("tickets").value||0),
+closed:Number(document.getElementById("closed").value||0),
+escalated:Number(document.getElementById("escalated").value||0),
+waiting:Number(document.getElementById("waiting").value||0),
+scheduled:Number(document.getElementById("scheduled").value||0),
+comment:document.getElementById("comment").value
 };
 
 if(editId){
@@ -283,113 +295,20 @@ editId=null;
 }else{
 await addDoc(collection(db,"worklog"), entry);
 }
-
-loadData();
 };
 
-/* LOAD ONLY USER DATA */
-async function loadData(){
+window.editEntry = async(id)=>{ editId=id; };
+window.deleteEntry = async(id)=>{ await deleteDoc(doc(db,"worklog",id)); };
 
-const user = auth.currentUser;
-if(!user) return;
-
-const q = query(
-collection(db,"worklog"),
-where("userId","==",user.uid)
-);
-
-const snap = await getDocs(q);
-
-dataTable.innerHTML="";
-
-snap.forEach(docSnap=>{
-const x = docSnap.data();
-const id = docSnap.id;
-
-dataTable.innerHTML+=`
-<tr>
-<td>${x.date}</td>
-<td>${x.engineerName}</td>
-<td>${x.status}</td>
-<td>${x.billable}</td>
-<td>${x.nonbillable}</td>
-<td>${x.tickets}</td>
-<td>${x.closed}</td>
-<td>${x.escalated}</td>
-<td>${x.waiting}</td>
-<td>${x.scheduled}</td>
-<td>${x.comment}</td>
-<td>
-<button onclick="editEntry('${id}')">Edit</button>
-<button onclick="deleteEntry('${id}')">Delete</button>
-</td>
-</tr>`;
-});
-}
-
-/* EXPORT ONLY USER DATA */
-exportBtn.onclick = async ()=>{
-
-const user = auth.currentUser;
-
-const q = query(
-collection(db,"worklog"),
-where("userId","==",user.uid)
-);
-
-const snap = await getDocs(q);
-
-let csv="Date,Engineer,Status,Billable,NonBillable,Tickets,Closed,Escalated,Waiting,Scheduled,Comment\n";
-
-snap.forEach(doc=>{
-const x=doc.data();
-csv+=`${x.date},${x.engineerName},${x.status},${x.billable},${x.nonbillable},${x.tickets},${x.closed},${x.escalated},${x.waiting},${x.scheduled},${x.comment}\n`;
-});
-
-const blob=new Blob([csv],{type:"text/csv"});
-const url=URL.createObjectURL(blob);
-const a=document.createElement("a");
-a.href=url;
-a.download="My_Data.csv";
-a.click();
+document.getElementById("logoutBtn").onclick = async ()=>{
+await signOut(auth);
+window.location.href="index.html";
 };
 
-/* EDIT */
-window.editEntry = async(id)=>{
-const snap = await getDocs(collection(db,"worklog"));
-snap.forEach(docSnap=>{
-if(docSnap.id===id){
-const d=docSnap.data();
-dateInput.value=d.date;
-engineerName.value=d.engineerName;
-status.value=d.status;
-manager.value=d.manager;
-billable.value=d.billable;
-nonbillable.value=d.nonbillable;
-tickets.value=d.tickets;
-closed.value=d.closed;
-escalated.value=d.escalated;
-waiting.value=d.waiting;
-scheduled.value=d.scheduled;
-comment.value=d.comment;
-editId=id;
-}
-});
-};
-
-/* DELETE */
-window.deleteEntry = async(id)=>{
-if(!confirm("Delete?")) return;
-await deleteDoc(doc(db,"worklog",id));
-loadData();
-};
-
-const calendar=new FullCalendar.Calendar(document.getElementById("calendar"),{
+new FullCalendar.Calendar(document.getElementById("calendar"),{
 initialView:"dayGridMonth",
-dateClick:(info)=> dateInput.value=info.dateStr
-});
-
-calendar.render();
+dateClick:(info)=> document.getElementById("date").value=info.dateStr
+}).render();
 
 </script>
 

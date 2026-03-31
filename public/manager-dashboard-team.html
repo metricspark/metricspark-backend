@@ -2,45 +2,52 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Manager Dashboard Pro</title>
+<title>MetricSpark Manager Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
 margin:0;
-font-family:Segoe UI;
+font-family:'Inter',sans-serif;
 display:flex;
 height:100vh;
+background: radial-gradient(circle at top left,#0f172a,#1e3a8a,#020617);
+color:white;
 }
 
 /* SIDEBAR */
 .sidebar{
-width:250px;
-background:#111827;
-color:white;
+width:260px;
 padding:20px;
-overflow:auto;
+background: rgba(255,255,255,0.05);
+backdrop-filter: blur(20px);
+border-right:1px solid rgba(255,255,255,0.1);
 }
 
 .engineer{
-padding:10px;
-margin-bottom:8px;
-background:#1f2937;
+padding:12px;
+margin-bottom:10px;
+border-radius:10px;
+background: rgba(255,255,255,0.08);
 cursor:pointer;
-border-radius:8px;
+transition:0.3s;
 }
-
 .engineer:hover{
-background:#374151;
+transform:translateY(-5px);
+background:linear-gradient(135deg,#3b82f6,#6366f1);
 }
 
 /* MAIN */
 .main{
 flex:1;
-background: linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
-color:white;
-padding:20px;
+padding:25px;
+overflow:auto;
+animation:fadeIn 0.6s ease;
+}
+@keyframes fadeIn{
+from{opacity:0; transform:translateY(10px);}
+to{opacity:1; transform:translateY(0);}
 }
 
 .header{
@@ -49,32 +56,65 @@ justify-content:space-between;
 align-items:center;
 }
 
-.filters{
-margin-top:10px;
+.logout{
+background:#ef4444;
+border:none;
+padding:10px 18px;
+border-radius:8px;
+color:white;
+cursor:pointer;
 }
 
+/* FILTER */
+.filters{margin-top:15px;}
+input{
+padding:10px;
+border-radius:8px;
+border:none;
+margin-right:10px;
+background:rgba(255,255,255,0.1);
+color:white;
+}
+
+/* KPI CARDS */
 .cards{
-display:flex;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
 gap:15px;
 margin-top:20px;
-flex-wrap:wrap;
 }
 
-.card{
-background:white;
-color:black;
-padding:15px;
-border-radius:10px;
-flex:1;
-min-width:150px;
+.kpi-card{
+padding:20px;
+border-radius:16px;
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(14px);
 text-align:center;
+transition:0.3s;
+box-shadow:0 10px 30px rgba(0,0,0,0.4);
 }
 
-canvas{
-background:white;
-border-radius:10px;
-margin-top:20px;
-padding:10px;
+.kpi-card:hover{
+transform:translateY(-6px) scale(1.03);
+}
+
+.kpi-value{
+font-size:22px;
+font-weight:600;
+margin-top:8px;
+}
+
+/* STATUS */
+.good{border:1px solid #22c55e; box-shadow:0 0 15px rgba(34,197,94,0.5);}
+.warn{border:1px solid #f59e0b; box-shadow:0 0 15px rgba(245,158,11,0.5);}
+.bad{border:1px solid #ef4444; box-shadow:0 0 15px rgba(239,68,68,0.5);}
+
+/* CHART */
+.chart-box{
+margin-top:25px;
+padding:20px;
+border-radius:15px;
+background:rgba(255,255,255,0.08);
 }
 </style>
 
@@ -84,128 +124,155 @@ padding:10px;
 
 <script>
 const firebaseConfig = {
-apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
-authDomain: "metricspark-1456b.firebaseapp.com",
-projectId: "metricspark-1456b"
+apiKey:"AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+authDomain:"metricspark-1456b.firebaseapp.com",
+projectId:"metricspark-1456b"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let globalData = [];
-let filteredData = [];
+let globalData=[];
+let filteredData=[];
 let chart;
 
 /* AUTH */
-firebase.auth().onAuthStateChanged(async (user)=>{
+firebase.auth().onAuthStateChanged(async(user)=>{
 if(!user){
 window.location.href="index.html";
 return;
 }
 
-const doc = await db.collection("users").doc(user.uid).get();
-if(doc.data().role !== "manager"){
+const doc=await db.collection("users").doc(user.uid).get();
+
+if(doc.data().role!=="manager"){
 window.location.href="index.html";
 return;
 }
 
-loadData();
+startRealtime();
 });
 
-/* LOAD */
-async function loadData(){
-const snap = await db.collection("worklog").get();
-globalData = [];
-
-snap.forEach(doc=>{
-globalData.push(doc.data());
-});
-
+/* REALTIME */
+function startRealtime(){
+db.collection("worklog").onSnapshot((snap)=>{
+globalData=[];
+snap.forEach(d=>globalData.push(d.data()));
 applyFilter();
-renderSidebar();
+});
 }
 
-/* DATE FILTER */
+/* FILTER */
 function applyFilter(){
-const start = document.getElementById("startDate").value;
-const end = document.getElementById("endDate").value;
+const start=document.getElementById("startDate").value;
+const end=document.getElementById("endDate").value;
 
-filteredData = globalData.filter(d=>{
-if(!start || !end) return true;
-return d.date >= start && d.date <= end;
+filteredData=globalData.filter(d=>{
+if(!start||!end) return true;
+return d.date>=start && d.date<=end;
 });
 
-renderChart();
+renderSidebar();
 renderCards(filteredData);
+renderChart();
 }
 
 /* SIDEBAR */
 function renderSidebar(){
-let map = {};
+let map={};
 filteredData.forEach(d=>{
-if(!map[d.engineerName]) map[d.engineerName]=true;
+if(d.engineerName) map[d.engineerName]=true;
 });
 
 let html="<h3>Engineers</h3>";
-for(let name in map){
-html += `<div class="engineer" onclick="showEngineer('${name}')">${name}</div>`;
+for(let n in map){
+html+=`<div class="engineer" onclick="showEngineer('${n}')">${n}</div>`;
 }
 document.getElementById("sidebar").innerHTML=html;
 }
 
-/* ENGINEER VIEW */
+/* ENGINEER FILTER */
 function showEngineer(name){
-const data = filteredData.filter(d=>d.engineerName===name);
+const data=filteredData.filter(d=>d.engineerName===name);
 renderCards(data);
 }
 
-/* CARDS */
+/* KPI */
 function renderCards(data){
 
-let billable = data.reduce((a,b)=>a+(b.billable||0),0);
-let nonbillable = data.reduce((a,b)=>a+(b.nonbillable||0),0);
-let tickets = data.reduce((a,b)=>a+(b.tickets||0),0);
-let closed = data.reduce((a,b)=>a+(b.closed||0),0);
-let escalated = data.reduce((a,b)=>a+(b.escalated||0),0);
+let billable=data.reduce((a,b)=>a+(b.billable||0),0);
+let nonbillable=data.reduce((a,b)=>a+(b.nonbillable||0),0);
+let tickets=data.reduce((a,b)=>a+(b.tickets||0),0);
+let closed=data.reduce((a,b)=>a+(b.closed||0),0);
+let escalated=data.reduce((a,b)=>a+(b.escalated||0),0);
 
-let total = billable + nonbillable;
+let total=billable+nonbillable;
 
-let util = total ? ((billable/total)*100).toFixed(1) : 0;
-let nonUtil = total ? ((nonbillable/total)*100).toFixed(1) : 0;
+let util= total? (billable/total)*100:0;
+let tpd=data.length? tickets/data.length:0;
 
-document.getElementById("cards").innerHTML = `
-<div class="card">Utilization %<br><b>${util}%</b></div>
-<div class="card">Non-Billable %<br><b>${nonUtil}%</b></div>
-<div class="card">Tickets Worked<br><b>${tickets}</b></div>
-<div class="card">Tickets Closed<br><b>${closed}</b></div>
-<div class="card">Escalated<br><b>${escalated}</b></div>
+function status(v,t){
+if(v>=t) return "good";
+if(v>=t*0.8) return "warn";
+return "bad";
+}
+
+document.getElementById("cards").innerHTML=`
+
+<div class="kpi-card ${status(util,80)}">
+Utilization %
+<div class="kpi-value">${util.toFixed(1)}%</div>
+</div>
+
+<div class="kpi-card ${status(tpd,12)}">
+Tickets/Day
+<div class="kpi-value">${tpd.toFixed(1)}</div>
+</div>
+
+<div class="kpi-card ${status((closed/tickets)*100||0,95)}">
+SLA
+<div class="kpi-value">${((closed/tickets)*100||0).toFixed(1)}%</div>
+</div>
+
+<div class="kpi-card ${status((closed/tickets)*100||0,80)}">
+FTR
+<div class="kpi-value">${((closed/tickets)*100||0).toFixed(1)}%</div>
+</div>
+
+<div class="kpi-card ${status((closed/tickets)*100||0,90)}">
+Same Day
+<div class="kpi-value">${((closed/tickets)*100||0).toFixed(1)}%</div>
+</div>
+
+<div class="kpi-card ${status(escalated/tickets||0,0.03)}">
+Escalation
+<div class="kpi-value">${((escalated/tickets)*100||0).toFixed(1)}%</div>
+</div>
 `;
 }
 
 /* CHART */
 function renderChart(){
-
-let map = {};
-
+let map={};
 filteredData.forEach(d=>{
-if(!map[d.engineerName]){
-map[d.engineerName]=0;
-}
-map[d.engineerName]+=d.billable || 0;
+if(!d.engineerName) return;
+if(!map[d.engineerName]) map[d.engineerName]=0;
+map[d.engineerName]+=d.billable||0;
 });
 
-const labels = Object.keys(map);
-const values = Object.values(map);
+const labels=Object.keys(map);
+const values=Object.values(map);
 
 if(chart) chart.destroy();
 
-chart = new Chart(document.getElementById("chart"), {
-type: "bar",
-data: {
-labels: labels,
-datasets: [{
-label: "Billable Hours",
-data: values
+chart=new Chart(document.getElementById("chart"),{
+type:"bar",
+data:{
+labels:labels,
+datasets:[{
+label:"Billable Hours",
+data:values,
+backgroundColor:"#3b82f6"
 }]
 }
 });
@@ -228,19 +295,21 @@ window.location.href="index.html";
 <div class="main">
 
 <div class="header">
-<h2>Manager Dashboard Pro</h2>
-<button onclick="logout()">Logout</button>
+<h2>🚀 Manager Dashboard</h2>
+<button class="logout" onclick="logout()">Logout</button>
 </div>
 
 <div class="filters">
-Start: <input type="date" id="startDate">
-End: <input type="date" id="endDate">
+<input type="date" id="startDate">
+<input type="date" id="endDate">
 <button onclick="applyFilter()">Apply</button>
 </div>
 
 <div class="cards" id="cards"></div>
 
+<div class="chart-box">
 <canvas id="chart"></canvas>
+</div>
 
 </div>
 
