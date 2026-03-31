@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Manager Dashboard - Tickets</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body { margin:0; font-family:Arial; display:flex; height:100vh; background:#0f172a; color:white; }
+
+.topbar {
+    position: fixed;
+    top:0; left:0; right:0;
+    height:50px;
+    background:#020617;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 20px;
+}
+
+.topbar button {
+    background:#1e293b;
+    color:white;
+    border:none;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.logout-btn { background:#ef4444; }
+
+.sidebar {
+    width:260px;
+    background:#020617;
+    padding:20px;
+    margin-top:50px;
+}
+
+.item { display:flex; justify-content:space-between; }
+
+.main { flex:1; padding:20px; margin-top:50px; }
+
+table { width:100%; border-collapse:collapse; }
+th,td { padding:10px; border-bottom:1px solid #1e293b; }
+th { background:#1e293b; }
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+    <div>🚀 MetricSpark Manager</div>
+    <div style="display:flex; gap:10px;">
+        <button onclick="goTeam()">👥 Team</button>
+        <button onclick="goTickets()">🎫 Tickets</button>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="sidebar">
+    <h3>Boards</h3>
+    <div id="boards"></div>
+
+    <h3>Owners</h3>
+    <div id="owners"></div>
+</div>
+
+<div class="main">
+    <h2>Open Tickets</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th><th>Summary</th><th>Board</th>
+                <th>Owner</th><th>Status</th><th>Priority</th><th>Age</th>
+            </tr>
+        </thead>
+        <tbody id="tickets"></tbody>
+    </table>
+</div>
+
+<script>
+
+/* NAV */
+function goTeam(){ location.href="manager-dashboard-team.html"; }
+function goTickets(){ location.href="manager-dashboard-cw.html"; }
+
+/* LOGOUT */
+function logout(){
+    window.location.href="index.html";
+}
+
+/* API */
+const API = "http://localhost:5000/tickets";
+const TOKEN = "metricspark123";
+
+async function load(){
+
+    try{
+        const res = await fetch(API,{
+            headers:{ "Authorization":"Bearer "+TOKEN }
+        });
+
+        const data = await res.json();
+
+        /* BOARDS */
+        document.getElementById("boards").innerHTML =
+        (data.boards||[]).map(b=>`
+        <div class="item"><span>${b.name}</span><span>${b.count}</span></div>`).join("");
+
+        /* OWNERS */
+        document.getElementById("owners").innerHTML =
+        (data.owners||[]).map(o=>`
+        <div class="item"><span>${o.name}</span><span>${o.count}</span></div>`).join("");
+
+        /* TABLE */
+        document.getElementById("tickets").innerHTML =
+        (data.tickets||[]).map(t=>`
+        <tr>
+        <td>${t.id}</td>
+        <td>${t.summary}</td>
+        <td>${t.board}</td>
+        <td>${t.owner}</td>
+        <td>${t.status}</td>
+        <td>${t.priority}</td>
+        <td>${t.age} days</td>
+        </tr>`).join("");
+
+    }catch(err){
+        console.error(err);
+        document.getElementById("tickets").innerHTML="❌ Failed to load";
+    }
+}
+
+load();
+setInterval(load,60000);
+
+</script>
+
+</body>
+</html>

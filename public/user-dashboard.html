@@ -93,9 +93,6 @@ padding:10px;
 border-bottom:1px solid #eee;
 text-align:center;
 }
-
-.edit-btn{background:#2563eb;color:white;padding:5px 8px;border-radius:6px;}
-.delete-btn{background:#ef4444;color:white;padding:5px 8px;border-radius:6px;}
 </style>
 </head>
 
@@ -194,7 +191,7 @@ MetricSpark Dashboard
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore,collection,addDoc,getDocs,doc,updateDoc,deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore,collection,addDoc,getDocs,doc,updateDoc,deleteDoc,query,where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey:"AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
@@ -241,6 +238,7 @@ userEmailSpan.textContent = user.email;
 if(emailMap[user.email]){
 engineerName.value = emailMap[user.email];
 }
+loadData();
 }else{
 window.location.href="index.html";
 }
@@ -255,24 +253,27 @@ window.location.href="index.html";
 /* SAVE */
 saveBtn.onclick = async () => {
 
+const user = auth.currentUser;
+
 if(!engineerName.value){
 alert("Select Engineer");
 return;
 }
 
 const entry = {
+userId: user.uid,
 date:dateInput.value,
 engineerName: engineerName.value,
-name: auth.currentUser.email,
+name: user.email,
 status:status.value,
 manager:manager.value,
-billable:Number(billable.value),
-nonbillable:Number(nonbillable.value),
-tickets:Number(tickets.value),
-closed:Number(closed.value),
-escalated:Number(escalated.value),
-waiting:Number(waiting.value),
-scheduled:Number(scheduled.value),
+billable:Number(billable.value || 0),
+nonbillable:Number(nonbillable.value || 0),
+tickets:Number(tickets.value || 0),
+closed:Number(closed.value || 0),
+escalated:Number(escalated.value || 0),
+waiting:Number(waiting.value || 0),
+scheduled:Number(scheduled.value || 0),
 comment:comment.value
 };
 
@@ -286,22 +287,24 @@ await addDoc(collection(db,"worklog"), entry);
 loadData();
 };
 
-/* LOAD */
+/* LOAD ONLY USER DATA */
 async function loadData(){
-const snap = await getDocs(collection(db,"worklog"));
+
+const user = auth.currentUser;
+if(!user) return;
+
+const q = query(
+collection(db,"worklog"),
+where("userId","==",user.uid)
+);
+
+const snap = await getDocs(q);
+
 dataTable.innerHTML="";
-const currentUser = auth.currentUser?.email;
 
 snap.forEach(docSnap=>{
 const x = docSnap.data();
 const id = docSnap.id;
-
-let actions="-";
-
-if(x.name===currentUser){
-actions=`<button onclick="editEntry('${id}')">Edit</button>
-<button onclick="deleteEntry('${id}')">Delete</button>`;
-}
 
 dataTable.innerHTML+=`
 <tr>
@@ -316,14 +319,25 @@ dataTable.innerHTML+=`
 <td>${x.waiting}</td>
 <td>${x.scheduled}</td>
 <td>${x.comment}</td>
-<td>${actions}</td>
+<td>
+<button onclick="editEntry('${id}')">Edit</button>
+<button onclick="deleteEntry('${id}')">Delete</button>
+</td>
 </tr>`;
 });
 }
 
-/* EXPORT */
+/* EXPORT ONLY USER DATA */
 exportBtn.onclick = async ()=>{
-const snap = await getDocs(collection(db,"worklog"));
+
+const user = auth.currentUser;
+
+const q = query(
+collection(db,"worklog"),
+where("userId","==",user.uid)
+);
+
+const snap = await getDocs(q);
 
 let csv="Date,Engineer,Status,Billable,NonBillable,Tickets,Closed,Escalated,Waiting,Scheduled,Comment\n";
 
@@ -336,7 +350,7 @@ const blob=new Blob([csv],{type:"text/csv"});
 const url=URL.createObjectURL(blob);
 const a=document.createElement("a");
 a.href=url;
-a.download="MetricSpark_Data.csv";
+a.download="My_Data.csv";
 a.click();
 };
 
@@ -376,7 +390,6 @@ dateClick:(info)=> dateInput.value=info.dateStr
 });
 
 calendar.render();
-loadData();
 
 </script>
 

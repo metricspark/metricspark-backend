@@ -36,21 +36,19 @@ text-align:center;
 color:white;
 }
 
-/* 🔥 3D LOGO WRAPPER */
 .logo-wrap{
 perspective:1000px;
 margin-bottom:15px;
 }
 
 .logo{
-width:350px; /* ✅ increased size */
+width:350px;
 display:block;
 margin:auto;
 transition: transform 0.2s ease;
 transform-style: preserve-3d;
 }
 
-/* LIGHT SWEEP */
 .logo-wrap::after{
 content:"";
 position:absolute;
@@ -87,7 +85,6 @@ margin-bottom:20px;
 color:#cfe2ff;
 }
 
-/* 🔥 PERFECT ALIGNMENT */
 .tabs{
 display:flex;
 gap:12px;
@@ -105,7 +102,6 @@ cursor:pointer;
 font-weight:500;
 }
 
-/* INPUT + BUTTON SAME SIZE */
 input, .main-btn{
 width:100%;
 height:50px;
@@ -123,7 +119,6 @@ outline:none;
 background:rgba(255,255,255,0.25);
 }
 
-/* PRIMARY BUTTON */
 .main-btn{
 background: linear-gradient(90deg,#2d63d3,#5a8dff);
 cursor:pointer;
@@ -144,7 +139,7 @@ cursor:pointer;
 <div class="container">
 
 <div class="logo-wrap">
-<img src="assets/logo-icon.png" class="logo" id="logo">
+<img src="assets/logo-icon.png" class="logo">
 </div>
 
 <div class="brand">MetricSpark</div>
@@ -164,13 +159,13 @@ cursor:pointer;
 
 </div>
 
+<!-- ✅ SCRIPT -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore,doc,setDoc,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore,doc,setDoc,getDoc,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* FIREBASE */
 const firebaseConfig = {
 apiKey:"AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
 authDomain:"metricspark-1456b.firebaseapp.com",
@@ -195,21 +190,6 @@ const forgotPassword = document.getElementById("forgotPassword");
 let isSignUp = false;
 let isRedirecting = false;
 
-/* 🔥 3D LOGO INTERACTION */
-const logo = document.getElementById("logo");
-
-document.querySelector(".logo-wrap").addEventListener("mousemove",(e)=>{
-const rect = e.currentTarget.getBoundingClientRect();
-const x = (e.clientX - rect.left)/rect.width - 0.5;
-const y = (e.clientY - rect.top)/rect.height - 0.5;
-
-logo.style.transform = `rotateX(${y*-20}deg) rotateY(${x*20}deg) scale(1.1)`;
-});
-
-document.querySelector(".logo-wrap").addEventListener("mouseleave",()=>{
-logo.style.transform = "rotateX(0) rotateY(0) scale(1)";
-});
-
 /* TAB SWITCH */
 loginTab.onclick = () => {
 isSignUp = false;
@@ -221,7 +201,7 @@ isSignUp = true;
 loginBtn.textContent = "Sign Up";
 };
 
-/* LOGIN */
+/* LOGIN / SIGNUP */
 loginBtn.onclick = async () => {
 
 const email = emailInput.value.trim();
@@ -237,8 +217,10 @@ loginBtn.disabled = true;
 
 try{
 
+let userCred;
+
 if(isSignUp){
-const userCred = await createUserWithEmailAndPassword(auth,email,password);
+userCred = await createUserWithEmailAndPassword(auth,email,password);
 
 await setDoc(doc(db,"users",userCred.user.uid),{
 email: email,
@@ -247,14 +229,35 @@ createdAt: serverTimestamp()
 });
 
 alert("Account created");
+
 }else{
-await signInWithEmailAndPassword(auth,email,password);
+userCred = await signInWithEmailAndPassword(auth,email,password);
 }
 
 isRedirecting = true;
-window.location.href="user-dashboard.html";
+
+// ✅ FIXED: no race condition
+const user = userCred.user;
+
+const docSnap = await getDoc(doc(db,"users",user.uid));
+
+if(!docSnap.exists()){
+alert("User data not found!");
+loginBtn.disabled = false;
+return;
+}
+
+const role = docSnap.data().role;
+
+// ✅ ROLE REDIRECT
+if(role === "manager"){
+window.location.href = "manager-dashboard-team.html";
+}else{
+window.location.href = "user-dashboard.html";
+}
 
 }catch(err){
+console.error(err);
 alert(err.message);
 }
 
@@ -263,7 +266,7 @@ loginBtn.disabled = false;
 
 };
 
-/* RESET */
+/* RESET PASSWORD */
 forgotPassword.onclick = async ()=>{
 const email = emailInput.value.trim();
 if(!email) return alert("Enter email first");
@@ -272,10 +275,24 @@ alert("Reset email sent");
 };
 
 /* AUTO LOGIN */
-onAuthStateChanged(auth,(user)=>{
+onAuthStateChanged(auth, async (user)=>{
+
 if(user && !isRedirecting){
+
+const docSnap = await getDoc(doc(db,"users",user.uid));
+
+if(!docSnap.exists()) return;
+
+const role = docSnap.data().role;
+
+if(role === "manager"){
+window.location.href="manager-dashboard-team.html";
+}else{
 window.location.href="user-dashboard.html";
 }
+
+}
+
 });
 
 </script>

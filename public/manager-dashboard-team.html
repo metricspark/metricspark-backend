@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Manager Dashboard Pro</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+margin:0;
+font-family:Segoe UI;
+display:flex;
+height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+width:250px;
+background:#111827;
+color:white;
+padding:20px;
+overflow:auto;
+}
+
+.engineer{
+padding:10px;
+margin-bottom:8px;
+background:#1f2937;
+cursor:pointer;
+border-radius:8px;
+}
+
+.engineer:hover{
+background:#374151;
+}
+
+/* MAIN */
+.main{
+flex:1;
+background: linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+color:white;
+padding:20px;
+}
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.filters{
+margin-top:10px;
+}
+
+.cards{
+display:flex;
+gap:15px;
+margin-top:20px;
+flex-wrap:wrap;
+}
+
+.card{
+background:white;
+color:black;
+padding:15px;
+border-radius:10px;
+flex:1;
+min-width:150px;
+text-align:center;
+}
+
+canvas{
+background:white;
+border-radius:10px;
+margin-top:20px;
+padding:10px;
+}
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+const firebaseConfig = {
+apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+authDomain: "metricspark-1456b.firebaseapp.com",
+projectId: "metricspark-1456b"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let globalData = [];
+let filteredData = [];
+let chart;
+
+/* AUTH */
+firebase.auth().onAuthStateChanged(async (user)=>{
+if(!user){
+window.location.href="index.html";
+return;
+}
+
+const doc = await db.collection("users").doc(user.uid).get();
+if(doc.data().role !== "manager"){
+window.location.href="index.html";
+return;
+}
+
+loadData();
+});
+
+/* LOAD */
+async function loadData(){
+const snap = await db.collection("worklog").get();
+globalData = [];
+
+snap.forEach(doc=>{
+globalData.push(doc.data());
+});
+
+applyFilter();
+renderSidebar();
+}
+
+/* DATE FILTER */
+function applyFilter(){
+const start = document.getElementById("startDate").value;
+const end = document.getElementById("endDate").value;
+
+filteredData = globalData.filter(d=>{
+if(!start || !end) return true;
+return d.date >= start && d.date <= end;
+});
+
+renderChart();
+renderCards(filteredData);
+}
+
+/* SIDEBAR */
+function renderSidebar(){
+let map = {};
+filteredData.forEach(d=>{
+if(!map[d.engineerName]) map[d.engineerName]=true;
+});
+
+let html="<h3>Engineers</h3>";
+for(let name in map){
+html += `<div class="engineer" onclick="showEngineer('${name}')">${name}</div>`;
+}
+document.getElementById("sidebar").innerHTML=html;
+}
+
+/* ENGINEER VIEW */
+function showEngineer(name){
+const data = filteredData.filter(d=>d.engineerName===name);
+renderCards(data);
+}
+
+/* CARDS */
+function renderCards(data){
+
+let billable = data.reduce((a,b)=>a+(b.billable||0),0);
+let nonbillable = data.reduce((a,b)=>a+(b.nonbillable||0),0);
+let tickets = data.reduce((a,b)=>a+(b.tickets||0),0);
+let closed = data.reduce((a,b)=>a+(b.closed||0),0);
+let escalated = data.reduce((a,b)=>a+(b.escalated||0),0);
+
+let total = billable + nonbillable;
+
+let util = total ? ((billable/total)*100).toFixed(1) : 0;
+let nonUtil = total ? ((nonbillable/total)*100).toFixed(1) : 0;
+
+document.getElementById("cards").innerHTML = `
+<div class="card">Utilization %<br><b>${util}%</b></div>
+<div class="card">Non-Billable %<br><b>${nonUtil}%</b></div>
+<div class="card">Tickets Worked<br><b>${tickets}</b></div>
+<div class="card">Tickets Closed<br><b>${closed}</b></div>
+<div class="card">Escalated<br><b>${escalated}</b></div>
+`;
+}
+
+/* CHART */
+function renderChart(){
+
+let map = {};
+
+filteredData.forEach(d=>{
+if(!map[d.engineerName]){
+map[d.engineerName]=0;
+}
+map[d.engineerName]+=d.billable || 0;
+});
+
+const labels = Object.keys(map);
+const values = Object.values(map);
+
+if(chart) chart.destroy();
+
+chart = new Chart(document.getElementById("chart"), {
+type: "bar",
+data: {
+labels: labels,
+datasets: [{
+label: "Billable Hours",
+data: values
+}]
+}
+});
+}
+
+/* LOGOUT */
+function logout(){
+firebase.auth().signOut().then(()=>{
+window.location.href="index.html";
+});
+}
+</script>
+
+</head>
+
+<body>
+
+<div class="sidebar" id="sidebar"></div>
+
+<div class="main">
+
+<div class="header">
+<h2>Manager Dashboard Pro</h2>
+<button onclick="logout()">Logout</button>
+</div>
+
+<div class="filters">
+Start: <input type="date" id="startDate">
+End: <input type="date" id="endDate">
+<button onclick="applyFilter()">Apply</button>
+</div>
+
+<div class="cards" id="cards"></div>
+
+<canvas id="chart"></canvas>
+
+</div>
+
+</body>
+</html>
