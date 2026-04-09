@@ -2,140 +2,188 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Manager Dashboard - Tickets</title>
+<title>MetricSpark Manager Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body { margin:0; font-family:Arial; display:flex; height:100vh; background:#0f172a; color:white; }
-
-.topbar {
-    position: fixed;
-    top:0; left:0; right:0;
-    height:50px;
-    background:#020617;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:0 20px;
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(90deg,#0f2027,#203a43,#2c5364);
+    color: white;
+    display: flex;
 }
 
-.topbar button {
-    background:#1e293b;
-    color:white;
-    border:none;
-    padding:6px 12px;
-    border-radius:6px;
-    cursor:pointer;
-}
-
-.logout-btn { background:#ef4444; }
-
+/* 🔹 Sidebar */
 .sidebar {
-    width:260px;
-    background:#020617;
-    padding:20px;
-    margin-top:50px;
+    width: 250px;
+    background: rgba(0,0,0,0.5);
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
-.item { display:flex; justify-content:space-between; }
+.sidebar h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 10px;
+}
 
-.main { flex:1; padding:20px; margin-top:50px; }
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
 
-table { width:100%; border-collapse:collapse; }
-th,td { padding:10px; border-bottom:1px solid #1e293b; }
-th { background:#1e293b; }
+.sidebar li {
+    padding: 10px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.sidebar li:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+/* 🔹 Main */
+.main {
+    flex: 1;
+}
+
+/* 🔹 Header */
+.header {
+    padding: 15px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.3);
+}
+
+.logout {
+    float: right;
+    cursor: pointer;
+    color: #ff4d4d;
+}
+
+/* 🔹 Content */
+.container {
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    color: black;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
 </style>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+    authDomain: "metricspark-1456b.firebaseapp.com",
+    projectId: "metricspark-1456b",
+    storageBucket: "metricspark-1456b.appspot.com",
+    messagingSenderId: "958626906247",
+    appId: "1:958626906247:web:0ed0f6ea8607e233e2b822"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+// 🔒 Protect page
+firebase.auth().onAuthStateChanged((user) => {
+    if (!user) {
+        window.location.href = "index.html";
+    }
+});
+
+// 🚪 Logout
+function logout() {
+    firebase.auth().signOut().then(() => {
+        window.location.href = "index.html";
+    });
+}
+
+// 🎫 Load tickets
+async function loadTickets() {
+    try {
+        const res = await fetch("http://localhost:5000/tickets");
+        const data = await res.json();
+
+        const container = document.getElementById("tickets");
+
+        if (!data || data.length === 0) {
+            container.innerHTML = "<p>No tickets found</p>";
+            return;
+        }
+
+        container.innerHTML = data.map(ticket => `
+            <div class="card">
+                <strong>${ticket.summary || "No Summary"}</strong><br><br>
+                Status: ${ticket.status?.name || "N/A"}<br>
+                Priority: ${ticket.priority?.name || "N/A"}<br>
+                Company: ${ticket.company?.name || "N/A"}
+            </div>
+        `).join("");
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("tickets").innerHTML = "❌ Error loading tickets";
+    }
+}
+
+// 🚀 Init
+window.onload = loadTickets;
+</script>
+
 </head>
 
 <body>
 
-<div class="topbar">
-    <div>🚀 MetricSpark Manager</div>
-    <div style="display:flex; gap:10px;">
-        <button onclick="goTeam()">👥 Team</button>
-        <button onclick="goTickets()">🎫 Tickets</button>
-        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-    </div>
-</div>
-
+<!-- 🔹 Sidebar -->
 <div class="sidebar">
-    <h3>Boards</h3>
-    <div id="boards"></div>
-
-    <h3>Owners</h3>
-    <div id="owners"></div>
+    <h3>🏢 Companies</h3>
+    <ul>
+        <li>Etech7</li>
+        <li>Continuous Networks LLC</li>
+        <li>ICSI</li>
+        <li>In-Telecom</li>
+        <li>iStreet Solutions</li>
+        <li>ITCubed</li>
+        <li>NerdsToGo</li>
+        <li>Pegasus Technology (Cal)</li>
+        <li>PTS</li>
+        <li>Perfect Cloud Solutions</li>
+        <li>Dataprise</li>
+        <li>Milner</li>
+    </ul>
 </div>
 
+<!-- 🔹 Main -->
 <div class="main">
-    <h2>Open Tickets</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th><th>Summary</th><th>Board</th>
-                <th>Owner</th><th>Status</th><th>Priority</th><th>Age</th>
-            </tr>
-        </thead>
-        <tbody id="tickets"></tbody>
-    </table>
+
+    <div class="header">
+        MetricSpark Dashboard
+        <span class="logout" onclick="logout()">Logout</span>
+    </div>
+
+    <div class="container">
+        <h2>🎫 Service Tickets</h2>
+        <div id="tickets">Loading tickets...</div>
+    </div>
+
 </div>
-
-<script>
-
-/* NAV */
-function goTeam(){ location.href="manager-dashboard-team.html"; }
-function goTickets(){ location.href="manager-dashboard-cw.html"; }
-
-/* LOGOUT */
-function logout(){
-    window.location.href="index.html";
-}
-
-/* API */
-const API = "http://localhost:5000/tickets";
-const TOKEN = "metricspark123";
-
-async function load(){
-
-    try{
-        const res = await fetch(API,{
-            headers:{ "Authorization":"Bearer "+TOKEN }
-        });
-
-        const data = await res.json();
-
-        /* BOARDS */
-        document.getElementById("boards").innerHTML =
-        (data.boards||[]).map(b=>`
-        <div class="item"><span>${b.name}</span><span>${b.count}</span></div>`).join("");
-
-        /* OWNERS */
-        document.getElementById("owners").innerHTML =
-        (data.owners||[]).map(o=>`
-        <div class="item"><span>${o.name}</span><span>${o.count}</span></div>`).join("");
-
-        /* TABLE */
-        document.getElementById("tickets").innerHTML =
-        (data.tickets||[]).map(t=>`
-        <tr>
-        <td>${t.id}</td>
-        <td>${t.summary}</td>
-        <td>${t.board}</td>
-        <td>${t.owner}</td>
-        <td>${t.status}</td>
-        <td>${t.priority}</td>
-        <td>${t.age} days</td>
-        </tr>`).join("");
-
-    }catch(err){
-        console.error(err);
-        document.getElementById("tickets").innerHTML="❌ Failed to load";
-    }
-}
-
-load();
-setInterval(load,60000);
-
-</script>
 
 </body>
 </html>

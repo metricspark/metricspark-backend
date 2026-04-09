@@ -1,350 +1,613 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MetricSpark Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
-
+<title>MetricSpark Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-body{
-margin:0;
-font-family:'Inter','Segoe UI',sans-serif;
-background: linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+/* CSS Reset and Variables */
+:root {
+  --bg-color: #0f172a; /* Slate 900 */
+  --surface-color: #1e293b; /* Slate 800 */
+  --surface-hover: #334155; /* Slate 700 */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --primary-accent: #3b82f6; /* Blue 500 */
+  --primary-hover: #2563eb;
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --font-family: 'Inter', sans-serif;
 }
 
-.header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:16px 30px;
-background: rgba(0,0,0,0.35);
-color:white;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.header-right{
-display:flex;
-gap:10px;
-align-items:center;
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  display: flex;
+  min-height: 100vh;
 }
 
-button{
-border:none;
-padding:8px 14px;
-border-radius:8px;
-cursor:pointer;
+/* Base Layout */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
-.logout-btn{background:#ef4444;color:white;}
-
-.main{
-display:grid;
-grid-template-columns:2fr 1fr;
-gap:24px;
-padding:24px;
+/* Header Navbar */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.card{
-background:white;
-padding:24px;
-border-radius:18px;
-box-shadow:0 20px 50px rgba(0,0,0,0.25);
+.logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  gap: 0.75rem;
 }
 
-.form-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:18px;
+.logo span {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.full{grid-column:span 2;}
-
-input, select{
-height:48px;
-padding:0 14px;
-border-radius:12px;
-border:1px solid #e5e7eb;
-background:#f9fafb;
+.user-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-.save-btn{
-width:100%;
-height:48px;
-background:#2563eb;
-color:white;
-border-radius:12px;
+/* Cards */
+.card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
 }
 
-table{
-width:100%;
-border-collapse:collapse;
+h3.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
 }
 
-th{
-background:#111827;
-color:white;
-padding:10px;
+/* Modern Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
 }
 
-td{
-padding:10px;
-border-bottom:1px solid #eee;
-text-align:center;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+input, select {
+  width: 100%;
+  height: 42px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(15, 23, 42, 0.5); /* Deep slate to match background */
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+/* Make Date Input entire area clickable */
+input[type="date"] {
+  cursor: pointer;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Custom select arrow styling */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat, repeat;
+  background-position: right .7em top 50%, 0 0;
+  background-size: .65em auto, 100%;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 42px;
+  padding: 0 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary-accent);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-danger {
+  background-color: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: white;
+}
+.btn-success:hover {
+  background-color: #059669; 
+}
+
+/* Tables */
+.table-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+th {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+th:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+th:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+
+td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.95rem;
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.badge-success { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-warning { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge-danger { background-color: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* Inline utility buttons */
+.text-button {
+  background: none;
+  border: none;
+  color: var(--primary-accent);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+.text-button:hover {
+  text-decoration: underline;
 }
 </style>
 </head>
-
 <body>
 
-<div class="header">
-MetricSpark Dashboard
-<div class="header-right">
-<span id="userName"></span>
-<button class="logout-btn" id="logoutBtn">Logout</button>
+<div class="app-container">
+  
+  <header class="top-nav">
+    <div class="logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      <span>MetricSpark</span>
+    </div>
+    <div class="user-controls">
+      <span id="displayUserName" style="font-weight: 500; color: var(--text-secondary);"></span>
+      <button class="btn btn-danger" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h3 class="section-title">Daily Work Entry</h3>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="date">Date</label>
+          <input type="date" id="date">
+        </div>
+        <div class="form-group">
+          <label for="engineerName">Engineer Name</label>
+          <select id="engineerName"></select>
+        </div>
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status">
+            <option value="">Select Status</option>
+            <option value="Working">Working</option>
+            <option value="PTO">PTO</option>
+            <option value="Week Off">Week Off</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="manager">Manager</label>
+          <select id="manager">
+            <option value="">Select Manager</option>
+            <option value="Aman Thakur">Aman Thakur</option>
+            <option value="Akhilesh">Akhilesh</option>
+            <option value="Kip">Kip</option>
+            <option value="Ash">Ash</option>
+            <option value="Amit">Amit</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="billable">Billable Hours</label>
+          <input type="number" id="billable" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label for="nonbillable">Non-Billable Hours</label>
+          <input type="number" id="nonbillable" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label for="tickets">Tickets Touched</label>
+          <input type="number" id="tickets" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label for="closed">Tickets Closed</label>
+          <input type="number" id="closed" placeholder="0">
+        </div>
+
+        <div class="form-group">
+          <label for="escalated">Escalated</label>
+          <input type="number" id="escalated" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label for="waiting">Waiting</label>
+          <input type="number" id="waiting" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label for="scheduled">Scheduled</label>
+          <input type="number" id="scheduled" placeholder="0">
+        </div>
+        
+        <div class="form-group full-width">
+          <label for="comment">Comment</label>
+          <input type="text" id="comment" placeholder="Add details or notes...">
+        </div>
+        
+        <div class="form-group" style="justify-content: flex-end;">
+          <button class="btn btn-primary" id="saveBtn">Save Entry</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-header-container">
+        <h3 class="section-title" style="margin-bottom: 0;">Submitted Entries</h3>
+        <button class="btn btn-success" id="exportBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV
+        </button>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Engineer</th>
+              <th>Status</th>
+              <th>Billable</th>
+              <th>Non Billable</th>
+              <th>Util %</th>
+              <th>Tix/Closed</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="dataTable">
+            <!-- Rendered by Firebase logic -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
 </div>
-</div>
-
-<div class="main">
-
-<div class="card">
-<h3>Daily Work Entry</h3>
-
-<div class="form-grid">
-
-<input type="date" id="date">
-
-<select id="engineerName"></select>
-
-<select id="status">
-<option value="">Status</option>
-<option>Working</option>
-<option>PTO</option>
-<option>Week Off</option>
-</select>
-
-<select id="manager">
-<option value="">Manager</option>
-<option>Aman Thakur</option>
-<option>Akhilesh</option>
-<option>Kip</option>
-<option>Ash</option>
-<option>Amit</option>
-</select>
-
-<input type="number" id="billable" placeholder="Billable">
-<input type="number" id="nonbillable" placeholder="Non Billable">
-
-<input type="number" id="tickets" placeholder="Tickets">
-<input type="number" id="closed" placeholder="Closed">
-
-<input type="number" id="escalated" placeholder="Escalated">
-<input type="number" id="waiting" placeholder="Waiting">
-
-<input type="number" id="scheduled" placeholder="Scheduled">
-<div></div>
-
-<input type="text" id="comment" placeholder="Comment" class="full">
-
-<button class="save-btn full" id="saveBtn">Save Entry</button>
-
-</div>
-</div>
-
-<div class="card">
-<h3>Work Calendar</h3>
-<div id="calendar"></div>
-</div>
-
-</div>
-
-<div class="card" style="margin:20px;">
-<h3>Submitted Entries</h3>
-<table>
-<thead>
-<tr>
-<th>Date</th><th>Engineer</th><th>Status</th><th>Billable</th>
-<th>Non Billable</th><th>Tickets</th><th>Closed</th>
-<th>Escalated</th><th>Waiting</th><th>Scheduled</th><th>Comment</th><th>Action</th>
-</tr>
-</thead>
-<tbody id="dataTable"></tbody>
-</table>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth,onAuthStateChanged,signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore,collection,addDoc,doc,updateDoc,deleteDoc,query,where,onSnapshot,getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, where, onSnapshot, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-apiKey:"AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
-authDomain:"metricspark-1456b.firebaseapp.com",
-projectId:"metricspark-1456b"
-};
+const app = initializeApp({
+  apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+  authDomain: "metricspark-1456b.firebaseapp.com",
+  projectId: "metricspark-1456b"
+});
 
-const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+const els = {
+  date: document.getElementById("date"),
+  engineerName: document.getElementById("engineerName"),
+  status: document.getElementById("status"),
+  manager: document.getElementById("manager"),
+  billable: document.getElementById("billable"),
+  nonbillable: document.getElementById("nonbillable"),
+  tickets: document.getElementById("tickets"),
+  closed: document.getElementById("closed"),
+  escalated: document.getElementById("escalated"),
+  waiting: document.getElementById("waiting"),
+  scheduled: document.getElementById("scheduled"),
+  comment: document.getElementById("comment"),
+  saveBtn: document.getElementById("saveBtn"),
+  exportBtn: document.getElementById("exportBtn"),
+  dataTable: document.getElementById("dataTable"),
+  logoutBtn: document.getElementById("logoutBtn"),
+  displayUserName: document.getElementById("displayUserName")
+};
+
 let currentUser = null;
 let currentName = "";
+let allData = [];
+let allDocs = [];
 let editId = null;
-let unsubscribe = null;
 
-onAuthStateChanged(auth,(user)=>{
-if(user){
-currentUser = user;
-
-let emailName = user.email.split("@")[0];
-currentName = emailName.split(".").map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
-
-document.getElementById("userName").textContent = currentName;
-
-const engineerDropdown = document.getElementById("engineerName");
-engineerDropdown.innerHTML = `<option value="${currentName}">${currentName}</option>`;
-engineerDropdown.value = currentName;
-
-startRealtime();
-}else{
-window.location.href="index.html";
+if (els.date) {
+  els.date.onclick = function() {
+    if(typeof this.showPicker === 'function') this.showPicker();
+  };
 }
+
+// AUTH
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUser = user;
+    let email = user.email.split("@")[0];
+    currentName = email.split(".").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+
+    els.displayUserName.innerText = currentName;
+    els.engineerName.innerHTML = `<option value="${currentName}">${currentName}</option>`;
+
+    startRealtime();
+  } else {
+    window.location.href = "index.html"; 
+  }
 });
 
-function startRealtime(){
-if(unsubscribe) unsubscribe();
+// LOGOUT
+els.logoutBtn.onclick = () => signOut(auth);
 
-const q = query(collection(db,"worklog"), where("userId","==",currentUser.uid));
+// SAVE
+els.saveBtn.onclick = async () => {
+  const billable = Number(els.billable.value) || 0;
+  const nonbillable = Number(els.nonbillable.value) || 0;
+  
+  const entry = {
+    userId: currentUser.uid,
+    engineerName: currentName,
+    date: els.date.value,
+    status: els.status.value,
+    manager: els.manager.value,
+    billable,
+    nonbillable,
+    tickets: Number(els.tickets.value) || 0,
+    closed: Number(els.closed.value) || 0,
+    escalated: Number(els.escalated.value) || 0,
+    waiting: Number(els.waiting.value) || 0,
+    scheduled: Number(els.scheduled.value) || 0,
+    comment: els.comment.value || ""
+  };
 
-unsubscribe = onSnapshot(q,(snap)=>{
-const table = document.getElementById("dataTable");
-table.innerHTML="";
+  if (!entry.date || !entry.status || !entry.manager) {
+    alert("Please fill in required fields: Date, Status, and Manager.");
+    return;
+  }
 
-let weeklyTotal = 0;
-const today = new Date();
-const firstDay = new Date(today);
-firstDay.setDate(today.getDate() - today.getDay() + 1);
+  if (!editId && allData.find(d => d.date === entry.date)) {
+    alert(`A dashboard entry for ${entry.date} already exists. Please edit it instead.`);
+    return;
+  }
 
-snap.forEach(docSnap=>{
-const x = docSnap.data();
-const id = docSnap.id;
+  els.saveBtn.disabled = true;
+  els.saveBtn.innerText = "Saving...";
 
-table.innerHTML+=`
-<tr>
-<td>${x.date||""}</td>
-<td>${x.engineerName||""}</td>
-<td>${x.status||""}</td>
-<td>${x.billable||0}</td>
-<td>${x.nonbillable||0}</td>
-<td>${x.tickets||0}</td>
-<td>${x.closed||0}</td>
-<td>${x.escalated||0}</td>
-<td>${x.waiting||0}</td>
-<td>${x.scheduled||0}</td>
-<td>${x.comment||""}</td>
-<td>
-<button onclick="editEntry('${id}')">Edit</button>
-<button onclick="deleteEntry('${id}')">Delete</button>
-</td>
-</tr>`;
+  try {
+    if (editId) {
+      await setDoc(doc(db, "worklog_entries", editId), entry, { merge: true });
+      editId = null;
+    } else {
+      await addDoc(collection(db, "worklog_entries"), entry);
+    }
+    
+    ["billable", "nonbillable", "tickets", "closed", "escalated", "waiting", "scheduled", "comment", "date"].forEach(id => {
+      els[id].value = "";
+    });
+    els.status.value = "";
+    els.manager.value = "";
 
-if(x.date){
-const entryDate = new Date(x.date);
-if(entryDate >= firstDay && entryDate <= today){
-weeklyTotal += (x.billable||0)+(x.nonbillable||0);
-}
-}
-});
-
-document.getElementById("weeklyTotal").textContent = weeklyTotal + " hrs";
-});
-}
-
-document.getElementById("saveBtn").onclick = async ()=>{
-
-const dateVal = document.getElementById("date").value.trim();
-const engVal = document.getElementById("engineerName").value.trim();
-const statusVal = document.getElementById("status").value.trim();
-const managerVal = document.getElementById("manager").value.trim();
-const billableVal = document.getElementById("billable").value.trim();
-const nonbillableVal = document.getElementById("nonbillable").value.trim();
-const ticketsVal = document.getElementById("tickets").value.trim();
-const closedVal = document.getElementById("closed").value.trim();
-const escalatedVal = document.getElementById("escalated").value.trim();
-const waitingVal = document.getElementById("waiting").value.trim();
-const scheduledVal = document.getElementById("scheduled").value.trim();
-const commentVal = document.getElementById("comment").value.trim();
-
-if(
-!dateVal || !engVal || !statusVal || !managerVal ||
-billableVal === "" || nonbillableVal === "" ||
-ticketsVal === "" || closedVal === "" ||
-escalatedVal === "" || waitingVal === "" ||
-scheduledVal === "" || !commentVal
-){
-alert("⚠️ Please fill all fields");
-return;
-}
-
-// duplicate check
-const q = query(collection(db,"worklog"), where("userId","==",currentUser.uid));
-const snap = await getDocs(q);
-
-let duplicate = false;
-
-snap.forEach(docSnap=>{
-const data = docSnap.data();
-if(editId && docSnap.id === editId) return;
-if(data.date === dateVal){
-duplicate = true;
-}
-});
-
-if(duplicate){
-alert("⚠️ Entry already exists for this date");
-return;
-}
-
-const entry = {
-userId: currentUser.uid,
-engineerName: currentName,
-date: dateVal,
-status: statusVal,
-manager: managerVal,
-billable:Number(billableVal),
-nonbillable:Number(nonbillableVal),
-tickets:Number(ticketsVal),
-closed:Number(closedVal),
-escalated:Number(escalatedVal),
-waiting:Number(waitingVal),
-scheduled:Number(scheduledVal),
-comment: commentVal
+  } catch (err) {
+    console.error("Firebase Error:", err);
+    alert("Failed to save. Try again.");
+  } finally {
+    els.saveBtn.disabled = false;
+    els.saveBtn.innerText = "Save Entry";
+  }
 };
 
-if(editId){
-await updateDoc(doc(db,"worklog",editId), entry);
-editId=null;
-}else{
-await addDoc(collection(db,"worklog"), entry);
+// REALTIME FEED
+function startRealtime() {
+  const q = query(collection(db, "worklog_entries"), where("userId", "==", currentUser.uid));
+
+  onSnapshot(q, (snap) => {
+    els.dataTable.innerHTML = "";
+    allData = []; 
+    allDocs = [];
+
+    snap.forEach(docSnap => {
+      const d = docSnap.data();
+
+      let util = 0;
+      let totalHrs = (d.billable || 0) + (d.nonbillable || 0);
+      if (totalHrs > 0) {
+        util = Math.round(((d.billable || 0) / totalHrs) * 100);
+      }
+
+      let badgeCls = "badge-danger";
+      if (util >= 75) badgeCls = "badge-success";
+      else if (util >= 50) badgeCls = "badge-warning";
+
+      els.dataTable.innerHTML += `
+        <tr>
+          <td style="font-weight: 500;">${d.date}</td>
+          <td>${d.engineerName}</td>
+          <td>${d.status}</td>
+          <td>${d.billable || 0}</td>
+          <td>${d.nonbillable || 0}</td>
+          <td><span class="badge ${badgeCls}">${util}%</span></td>
+          <td>${d.tickets || 0} / ${d.closed || 0}</td>
+          <td>
+            <button class="text-button" onclick="window.editEntry('${docSnap.id}')">Edit</button> |
+            <button class="text-button" style="color: var(--danger);" onclick="window.deleteEntry('${docSnap.id}')">Delete</button>
+          </td>
+        </tr>`;
+
+      allData.push(d);
+      allDocs.push(docSnap.id);
+    });
+  });
 }
+
+// EDIT
+window.editEntry = (id) => {
+  const i = allDocs.indexOf(id);
+  if (i === -1) return;
+  const d = allData[i];
+
+  els.date.value = d.date || "";
+  els.status.value = d.status || "";
+  els.manager.value = d.manager || "";
+  els.billable.value = d.billable || "";
+  els.nonbillable.value = d.nonbillable || "";
+  els.tickets.value = d.tickets || "";
+  els.closed.value = d.closed || "";
+  els.escalated.value = d.escalated || "";
+  els.waiting.value = d.waiting || "";
+  els.scheduled.value = d.scheduled || "";
+  els.comment.value = d.comment || "";
+
+  editId = id;
+  els.saveBtn.innerText = "Update Entry";
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.editEntry = async(id)=>{ editId=id; };
-window.deleteEntry = async(id)=>{ await deleteDoc(doc(db,"worklog",id)); };
-
-document.getElementById("logoutBtn").onclick = async ()=>{
-await signOut(auth);
-window.location.href="index.html";
+// DELETE
+window.deleteEntry = async (id) => {
+  if (confirm("Are you sure you want to delete this specific entry?")) {
+    try {
+      await deleteDoc(doc(db, "worklog_entries", id));
+      if (editId === id) {
+        editId = null;
+        els.saveBtn.innerText = "Save Entry";
+      }
+    } catch (err) {
+      console.error("Firebase Error deleting document:", err);
+      alert("Failed to delete entry. Try again.");
+    }
+  }
 };
 
-new FullCalendar.Calendar(document.getElementById("calendar"),{
-initialView:"dayGridMonth",
-dateClick:(info)=> document.getElementById("date").value=info.dateStr
-}).render();
+// EXPORT TO EXCEL/CSV
+els.exportBtn.onclick = () => {
+  let csv = "Date,Engineer,Utilization,Status,Billable,Non Billable,Tickets,Closed,Escalated,Waiting,Scheduled,Comment\n";
+  
+  allData.forEach(d => {
+    let totalHrs = (d.billable || 0) + (d.nonbillable || 0);
+    let util = totalHrs > 0 ? ((d.billable || 0) / totalHrs) * 100 : 0;
+    
+    let safeComment = d.comment ? `"${d.comment.replace(/"/g, '""')}"` : "";
 
+    csv += `${d.date},${d.engineerName},${Math.round(util)}%,${d.status},${d.billable||0},${d.nonbillable||0},${d.tickets||0},${d.closed||0},${d.escalated||0},${d.waiting||0},${d.scheduled||0},${safeComment}\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "MetricSpark_Dashboard_Report.csv";
+  a.click();
+};
 </script>
 
 </body>
