@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Insights — Performance Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="favicon.png">
+
+<style>
+  :root {
+    --bg:#f3f7fb; --card:#fff; --muted:#6b7280; --accent:#2563eb;
+    --accent-2:#1e3a8a; --red:#ef4444; --green:#10b981;
+  }
+  *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+  body{margin:0;background:var(--bg);color:#0f172a}
+  .app{display:flex;min-height:100vh}
+
+  /* Sidebar */
+  .sidebar{
+    width:240px;background:#fff;padding:28px 18px;
+    border-right:1px solid rgba(0,0,0,.05);display:flex;flex-direction:column
+  }
+  .logo{display:flex;align-items:center;gap:12px}
+  .ico{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+  .nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+  .nav a{
+    padding:12px;border-radius:10px;color:var(--muted);
+    text-decoration:none;display:flex;gap:8px;align-items:center;
+  }
+  .nav a.active{background:#eef6ff;color:var(--accent);font-weight:600}
+  .nav a:hover{background:#f8fafc;color:var(--accent)}
+
+  /* Main UI */
+  .main{flex:1;padding:22px;position:relative;display:flex;flex-direction:column;height:100vh}
+  .header{font-size:26px;font-weight:700;margin-bottom:20px;}
+
+  .chat-box{
+    flex:1;background:#fff;padding:20px;border-radius:14px;
+    box-shadow:0 6px 18px rgba(12,18,30,0.06);
+    overflow-y:auto;
+  }
+
+  .msg{
+    max-width:70%;padding:12px 16px;border-radius:14px;
+    margin-bottom:14px;line-height:1.5;font-size:15px;
+    white-space:pre-wrap;
+  }
+
+  .user-msg{ background:var(--accent);color:white;margin-left:auto;border-bottom-right-radius:4px; }
+  .ai-msg{ background:#eef6ff;color:#0f172a;border-bottom-left-radius:4px; }
+
+  .typing{ font-style:italic;color:var(--muted);margin-bottom:10px; }
+
+  /* Input */
+  .input-bar{
+    display:flex;gap:12px;margin-top:14px;
+  }
+  .input-bar input{
+    flex:1;padding:12px;border-radius:10px;border:1px solid #d0d7e2;font-size:15px;
+  }
+  .input-bar button{
+    background:var(--accent);color:#fff;padding:12px 22px;border:none;border-radius:10px;font-weight:600;cursor:pointer;
+  }
+  .input-bar button:hover{ opacity:0.9; }
+</style>
+<script>if(window.self !== window.top) { document.write('<style>.sidebar{display:none !important;} .app{flex-direction:column;} .main{margin-left:0 !important; padding:15px !important;}</style>'); }</script></head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="ico">PT</div>
+      <div>
+        <div style="font-weight:700">Performance</div>
+        <div style="color:var(--muted);font-size:13px">Tracker</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="updated.html">📊 Dashboard</a>
+      <a href="teammembers.html">👥 Team Members</a>
+      <a href="attendance.html">📅 Attendance</a>
+      <a href="reports.html">📈 Reports</a>
+      <a class="active" href="ai-chat.html">🤖 AI Insights</a>
+    </nav>
+
+    <div style="margin-top:auto;padding-top:20px;border-top:1px solid rgba(0,0,0,0.08)">
+      <div style="font-size:14px;color:var(--muted)">Manager Mode</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="header">AI Insights Chat</div>
+
+    <div id="chatBox" class="chat-box"></div>
+
+    <div class="input-bar">
+      <input id="msgInput" placeholder="Ask anything… (e.g., 'Average billable for Rahul last month')" />
+      <button id="sendBtn">Send</button>
+    </div>
+  </main>
+</div>
+
+
+
+<script type="module">
+  console.log("=== AI CHAT PAGE LOADED ===");
+
+  /* ------ FIREBASE ------ */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { 
+    getFirestore, collection, query, where, getDocs 
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCOwKXnOXAw_hl3ZTYjtPnMJG_TiSHm8rY",
+    authDomain: "utilizationtracker.firebaseapp.com",
+    projectId: "utilizationtracker",
+    storageBucket: "utilizationtracker.firebasestorage.app",
+    messagingSenderId: "67928414030",
+    appId: "1:67928414030:web:2cae8e72eeb146820b701f",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  /* ----------------------------------------------------------
+     BUILD ENGINEER NAME MAP FROM USERS COLLECTION
+     lowercase name → correct Firestore displayName
+     ---------------------------------------------------------- */
+
+  let engineerNameMap = {};   // { "scout kalra": "Scout Kalra" }
+  let engineerNames = [];     // ["scout kalra", "charles jha"]
+
+  async function loadEngineerNames() {
+    console.log("DEBUG: Loading engineer names...");
+
+    const usersSnap = await getDocs(collection(db, "users"));
+
+    usersSnap.forEach(doc => {
+      const data = doc.data();
+
+      if (!data.displayName) return;
+
+      const proper = data.displayName.trim();
+      const lower = proper.toLowerCase();
+
+      engineerNameMap[lower] = proper;
+      engineerNames.push(lower);
+    });
+
+    console.log("DEBUG: engineerNameMap:", engineerNameMap);
+    console.log("DEBUG: engineerNames:", engineerNames);
+  }
+
+  await loadEngineerNames();
+
+  /* ----------------------------------------------------------
+     NAME DETECTION (FUZZY)
+     ---------------------------------------------------------- */
+  function extractEngineer(question) {
+    console.log("DEBUG: Extracting engineer name from:", question);
+
+    const lowerQ = question.toLowerCase();
+
+    for (const lowerName of engineerNames) {
+      if (lowerQ.includes(lowerName)) {
+        console.log("DEBUG: matched lowercase:", lowerName);
+        console.log("DEBUG: correct name:", engineerNameMap[lowerName]);
+        return engineerNameMap[lowerName]; // return correct Firestore name
+      }
+    }
+
+    console.log("DEBUG: No engineer matched.");
+    return null;
+  }
+
+  function extractDate(text) {
+    const d = text.match(/\d{4}-\d{2}-\d{2}/);
+    return d ? d[0] : null;
+  }
+
+  function extractMonth(text) {
+    const m = text.match(/\d{4}-\d{2}/);
+    return m ? m[0] : null;
+  }
+
+  /* ----------------------------------------------------------
+     FIRESTORE FETCH
+     ---------------------------------------------------------- */
+  async function fetchTimesheetForEngineer(name, month=null, date=null) {
+    console.log("FETCH DEBUG → Searching Firestore for:", name);
+
+    const q = query(
+      collection(db, "timesheet_entries"),
+      where("engineer", "==", name)   // exact Firestore match
+    );
+
+    const snap = await getDocs(q);
+    let data = snap.docs.map(d => d.data());
+
+    console.log("FETCH DEBUG → raw entries:", data);
+
+    if (month) {
+      data = data.filter(x => x.date?.startsWith(month));
+      console.log("FILTER month:", data);
+    }
+    if (date) {
+      data = data.filter(x => x.date === date);
+      console.log("FILTER date:", data);
+    }
+
+    return data;
+  }
+
+  /* ----------------------------------------------------------
+     OPENAI CALL
+     ---------------------------------------------------------- */
+  const OPENAI_API_KEY = "sk--s2pgN0HTfBji6B7NMBWkMSew6o04_CI8PXhbi57e3p5WNq6kzDCQpj5qqxHBdEcV3L9tgEvcU6T3BlbkFJ40EtIXyWVU6Z7XzTz9w1Blt6YkCZv6M_hjWxgWqi4O7qCiqOiZVmorqkp_zVtHE4Ql8-ol3LkA";
+
+  async function askOpenAI(question, data) {
+    const body = {
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an AI that analyzes timesheet & utilization data. Use ONLY the provided Firestore data. Do not invent records."
+        },
+        {
+          role: "user",
+          content: `Question: ${question}\n\nData:\n${JSON.stringify(data, null, 2)}`
+        }
+      ]
+    };
+
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + OPENAI_API_KEY
+      },
+      body: JSON.stringify(body)
+    });
+
+    const json = await res.json();
+    console.log("DEBUG OpenAI:", json);
+
+    return json.choices?.[0]?.message?.content || "AI error.";
+  }
+
+  /* ----------------------------------------------------------
+     CHAT HANDLER
+     ---------------------------------------------------------- */
+  const chatBox = document.getElementById("chatBox");
+  const msgInput = document.getElementById("msgInput");
+
+  function addMsg(t, isUser=false) {
+    const div = document.createElement("div");
+    div.className = "msg " + (isUser ? "user-msg" : "ai-msg");
+    div.textContent = t;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function addTyping() {
+    const t = document.createElement("div");
+    t.id = "typing";
+    t.className = "typing";
+    t.textContent = "AI is thinking...";
+    chatBox.appendChild(t);
+  }
+
+  function removeTyping() {
+    const t = document.getElementById("typing");
+    if (t) t.remove();
+  }
+
+  async function handleQuestion() {
+    const q = msgInput.value.trim();
+    if (!q) return;
+
+    addMsg(q, true);
+    msgInput.value = "";
+    addTyping();
+
+    const engineer = extractEngineer(q);
+    const month = extractMonth(q);
+    const date = extractDate(q);
+
+    console.log("SUMMARY →", { engineer, month, date });
+
+    let data = [];
+    if (engineer) {
+      data = await fetchTimesheetForEngineer(engineer, month, date);
+    }
+
+    const answer = await askOpenAI(q, data);
+    removeTyping();
+    addMsg(answer);
+  }
+
+  document.getElementById("sendBtn").addEventListener("click", handleQuestion);
+  msgInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") handleQuestion();
+  });
+
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Client Reporting — Manager Dashboard</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg:#f3f7fb; --card:#fff; --muted:#6b7280; --accent:#2563eb;
+      --accent-2:#1e3a8a; --red:#ef4444; --amber:#f59e0b; --green:#10b981;
+      --kpi-target:#0f172a; --kpi-title:#6b7280;
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;background:var(--bg);color:#0f172a}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:240px;background:#fff;padding:28px 18px;border-right:1px solid rgba(0,0,0,.05);display:flex;flex-direction:column}
+    .logo{display:flex;align-items:center;gap:12px}
+    .ico{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+    .nav a{padding:12px;border-radius:10px;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:10px;font-size:15px;transition:all 0.2s ease}
+    .nav a.active{background:#eef6ff;color:var(--accent);font-weight:600}
+    .nav a:hover{background:#f8fafc;color:var(--accent)}
+    .user{margin-top:auto;padding-top:18px;border-top:1px solid rgba(0,0,0,.04)}
+    .user-info{display:flex;align-items:center;gap:12px}
+    .user-menu{position:absolute;top:22px;right:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:100;min-width:120px}
+    .user-menu-top{display:flex;align-items:center;gap:10px}
+    .signout{padding:6px 14px;border-radius:6px;border:1px solid #fee2e2;color:#b91c1c;background:#fff;cursor:pointer;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.2s ease;white-space:nowrap;width:100%;text-align:center}
+    .signout:hover{background:#fee2e2}
+    .main{flex:1;padding:22px;overflow-x:auto;position:relative}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;padding-right:140px}
+    .title h1{margin:0;font-size:26px;font-weight:700}
+    .title .subtitle{color:var(--muted);margin-top:4px;font-size:14px}
+    .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .select,.btn{padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:var(--card);font-size:14px}
+    .select{min-width:160px}
+    .btn{background:linear-gradient(90deg,var(--accent),#4f46e5);color:#fff;border:none;cursor:pointer;font-weight:600}
+    .btn:hover{opacity:0.9}
+    .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,.1);color:var(--accent);font-weight:600}
+    .btn.ghost:hover{background:#f8fafc}
+
+    .card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    .card{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 6px 18px rgba(12,18,30,0.04);display:flex;flex-direction:column}
+    .card h3{margin:0;color:var(--muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+    .card .val{font-size:28px;font-weight:700;margin-top:8px;color:#0f172a}
+    .card .sub{color:var(--muted);margin-top:6px;font-size:12px}
+    .card .val.green{color:var(--green)}
+    .card .val.amber{color:var(--amber)}
+
+    .panels{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:20px}
+    .panel{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 8px 30px rgba(12,18,30,0.04)}
+    .panel h4{margin:0 0 16px;font-size:16px;font-weight:700;color:#0f172a}
+    .panel h4 + hr{margin-top:12px;margin-bottom:16px;border:none;border-top:1px solid #eef2f6}
+    .chart-container{position:relative;height:280px;margin-top:12px}
+    .chart-container canvas{max-height:100%}
+
+    .table-container{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 8px 30px rgba(12,18,30,0.04);overflow-x:auto;margin-top:20px}
+    .table-container h4{margin:0 0 16px;font-size:16px;font-weight:700;color:#0f172a}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    thead{background:#f8fafc}
+    th,td{padding:12px;text-align:left;border-bottom:1px solid #eef2f6}
+    th{font-weight:700;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:0.5px}
+    td{color:#0f172a}
+    tbody tr:hover{background:#f8fafc}
+    tbody tr:last-child td{border-bottom:none}
+
+    .stat-item{display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8fafc;border-radius:8px;margin-bottom:10px}
+    .stat-item:last-child{margin-bottom:0}
+    .stat-item .label{font-weight:600;color:#0f172a}
+    .stat-item .value{font-weight:700;color:var(--accent)}
+
+    .util-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600}
+    .util-badge.high{background:rgba(16,185,129,0.1);color:var(--green)}
+    .util-badge.medium{background:rgba(245,158,11,0.1);color:var(--amber)}
+    .util-badge.low{background:rgba(239,68,68,0.1);color:var(--red)}
+
+    .no-data{text-align:center;color:var(--muted);padding:40px;font-size:14px}
+
+    @media(max-width:1200px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:980px){.panels{grid-template-columns:1fr}.card-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){.sidebar{display:none}.main{padding:12px}.card-grid{grid-template-columns:1fr}.header{flex-direction:column;align-items:flex-start;padding-right:110px}.user-menu{top:12px;right:12px;min-width:100px}}
+  </style>
+<script>if(window.self !== window.top) { document.write('<style>.sidebar{display:none !important;} .app{flex-direction:column;} .main{margin-left:0 !important; padding:15px !important;}</style>'); }</script></head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="favicon.png" style="width:44px; height:44px; border-radius:10px; object-fit:contain;">
+        <div><div style="font-weight:700">Performance</div><div style="color:var(--muted);font-size:13px">Tracker</div></div>
+      </div>
+	  
+	  <nav class="nav">
+        <a href="updated.html"><i>📊</i> Dashboard</a>
+        <a href="teammembers.html"><i>👥</i> Team Members</a>
+        <a href="reports.html"><i>📈</i> Team Performance</a>
+		<a href="attendance.html"><i>📅</i> Attendance</a>
+        <a href="clientreporting.html" class="active"><i>🏢</i> Client Wise Reporting</a>
+        <a href="attrition.html"><i>📉</i> Attrition</a>
+        <a href="billing.html"><i>💰</i> Billing</a>
+        <a href="levelups.html"><i>🎯</i> Level Ups</a>
+      </nav>
+	  
+      <div class="user">
+        <div class="user-info">
+          <div id="userAvatar" style="width:40px;height:40px;border-radius:999px;background:#e6eefc;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700">U</div>
+          <div><div id="userName" style="font-weight:600;font-size:15px">User</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-top">
+          <div id="headerUserAvatar" style="width:36px;height:36px;border-radius:999px;background:#e6eefc;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:14px">U</div>
+          <div id="headerUserName" style="font-weight:600;font-size:14px">User</div>
+        </div>
+        <button class="signout" id="signOut">Sign Out</button>
+      </div>
+
+      <div class="header">
+        <div class="title">
+          <h1>Client Reporting</h1>
+          <div class="subtitle">Analyze engineering performance grouped by client</div>
+        </div>
+        <div class="controls">
+          <select id="clientSelector" class="select">
+            <option value="all">All Clients</option>
+            </select>
+          <button id="refresh" class="select">⟳</button>
+          <select id="period" class="select">
+            <option value="month">This Month</option>
+            <option value="quarter">This Quarter</option>
+            <option value="year">This Year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <h3>Engineers Assigned</h3>
+          <div class="val" id="engineersAssigned">...</div>
+          <div class="sub">Active engineers across clients</div>
+        </div>
+        <div class="card">
+          <h3>Avg Utilization</h3>
+          <div class="val" id="avgUtilization">...</div>
+          <div class="sub">Target: 80%</div>
+        </div>
+        <div class="card">
+          <h3>Total Billable Hours</h3>
+          <div class="val" id="totalBillableHours">...</div>
+          <div class="sub">This period</div>
+        </div>
+        <div class="card">
+          <h3>CSAT Score</h3>
+          <div class="val" id="csatScore" style="color:var(--muted)">N/A</div>
+          <div class="sub">Client satisfaction</div>
+        </div>
+      </div>
+
+      <div class="panels">
+        <div class="panel">
+          <h4>Resource Utilization by Engineer</h4>
+          <div class="chart-container">
+            <canvas id="utilizationChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h4>Client Summary</h4>
+          <hr>
+          <div id="clientSummary">
+             <div class="stat-item" style="justify-content:center; color:var(--muted)">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <h4>Engineer Performance by Client</h4>
+        <table id="engineerTable">
+          <thead>
+            <tr>
+              <th>Engineer</th>
+              <th>Client</th>
+              <th>Billable Hrs</th>
+              <th>Util %</th>
+              <th>Tickets Closed</th>
+              <th>Manager</th>
+            </tr>
+          </thead>
+          <tbody id="engineerTableBody">
+            <tr>
+                <td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">
+                    Loading real data...
+                </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+    // ========== FIREBASE INIT ==========
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOwKXnOXAw_hl3ZTYjtPnMJG_TiSHm8rY",
+      authDomain: "utilizationtracker.firebaseapp.com",
+      projectId: "utilizationtracker",
+      storageBucket: "utilizationtracker.firebasestorage.app",
+      messagingSenderId: "67928414030",
+      appId: "1:67928414030:web:2cae8e72eeb146820b701f",
+      measurementId: "G-6LE13CNF0K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // ========== STATE ==========
+    let currentUser = null;
+    let engineerClientMap = {}; // email -> clientName
+    let engineerNameMap = {};   // email -> displayName
+    let engineerManagerMap = {}; // email -> managerName
+    // Reverse map for fallback (Name -> Email)
+    let engineerNameToEmail = {}; 
+    let allTimesheets = [];
+    let charts = {};
+
+    // ========== AUTHENTICATION ==========
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+      currentUser = user;
+      updateUserProfile(user);
+      initDashboard();
+    });
+
+    function updateUserProfile(user) {
+      const avatarEl = document.getElementById("userAvatar");
+      const nameEl = document.getElementById("userName");
+      const headerAvatarEl = document.getElementById("headerUserAvatar");
+      const headerNameEl = document.getElementById("headerUserName");
+
+      const initials = (user.displayName || user.email || "U").charAt(0).toUpperCase();
+      const name = user.displayName || user.email.split("@")[0];
+
+      if (avatarEl) { avatarEl.textContent = initials; nameEl.textContent = name; }
+      if (headerAvatarEl) { headerAvatarEl.textContent = initials; headerNameEl.textContent = name; }
+    }
+
+    document.getElementById("signOut").addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "/login.html");
+    });
+
+    // ========== DATA FETCHING ==========
+    async function initDashboard() {
+      showLoadingState();
+      await fetchEngineerData();
+      await fetchTimesheetData();
+      populateClientSelector();
+      renderDashboard();
+    }
+
+    async function fetchEngineerData() {
+      try {
+        const snap = await getDocs(collection(db, "users"));
+        engineerClientMap = {};
+        engineerNameMap = {};
+        engineerManagerMap = {};
+        engineerNameToEmail = {};
+        
+        snap.forEach(doc => {
+          const data = doc.data();
+          const email = data.email?.toLowerCase();
+          const name = data.displayName || data.name || email;
+          
+          if (email) {
+            engineerClientMap[email] = data.client || "Internal";
+            engineerNameMap[email] = name;
+            engineerManagerMap[email] = data.managerName || "-";
+            // Create a cleanup name for matching (trim spaces)
+            if(name) engineerNameToEmail[name.trim()] = email;
+          }
+        });
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
+    }
+
+    async function fetchTimesheetData() {
+      try {
+        const period = document.getElementById("period").value;
+        let startDate = new Date();
+        const now = new Date();
+
+        if (period === "month") {
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (period === "quarter") {
+          const q = Math.floor(now.getMonth() / 3);
+          startDate = new Date(now.getFullYear(), q * 3, 1);
+        } else if (period === "year") {
+          startDate = new Date(now.getFullYear(), 0, 1);
+        }
+        
+        const dateStr = startDate.toISOString().slice(0, 10);
+        
+        const q = query(collection(db, "timesheet_entries"), where("date", ">=", dateStr));
+        const snap = await getDocs(q);
+        
+        allTimesheets = [];
+        snap.forEach(doc => {
+            allTimesheets.push(doc.data());
+        });
+
+      } catch (err) {
+        console.error("Error fetching timesheets:", err);
+      }
+    }
+
+    function populateClientSelector() {
+      const selector = document.getElementById("clientSelector");
+      const clients = new Set(Object.values(engineerClientMap));
+      const currentVal = selector.value;
+      
+      selector.innerHTML = '<option value="all">All Clients</option>';
+      
+      Array.from(clients).sort().forEach(client => {
+        if (!client) return;
+        const opt = document.createElement("option");
+        opt.value = client;
+        opt.textContent = client;
+        selector.appendChild(opt);
+      });
+
+      if (currentVal && (clients.has(currentVal) || currentVal === 'all')) {
+          selector.value = currentVal;
+      }
+    }
+
+    // ========== CORE LOGIC FIX ==========
+    function renderDashboard() {
+      const selectedClient = document.getElementById("clientSelector").value;
+      
+      // 1. Identify Target Engineers (The Roster)
+      // If "all", we want everyone. If specific client, we want only those mapped to that client.
+      let targetEmails = [];
+      if (selectedClient === "all") {
+        targetEmails = Object.keys(engineerClientMap);
+      } else {
+        targetEmails = Object.keys(engineerClientMap).filter(email => 
+          engineerClientMap[email] === selectedClient
+        );
+      }
+
+      // 2. Initialize Stats for EVERY target engineer (Default to 0)
+      let engStats = {};
+      targetEmails.forEach(email => {
+        engStats[email] = {
+          name: engineerNameMap[email],
+          client: engineerClientMap[email],
+          manager: engineerManagerMap[email],
+          billable: 0,
+          nonBillable: 0,
+          total: 0,
+          tickets: 0,
+          hasData: false
+        };
+      });
+
+      // 3. Process Timesheets & Link to Engineers
+      allTimesheets.forEach(t => {
+        let email = (t.engineerEmail || "").toLowerCase();
+
+        // --- FALLBACK FIX FOR MISSING EMAIL (Donald Peter case) ---
+        if (!email && t.engineer) {
+           // Try to find email by looking up the name
+           const cleanName = t.engineer.trim();
+           if (engineerNameToEmail[cleanName]) {
+             email = engineerNameToEmail[cleanName];
+           }
+        }
+        // ---------------------------------------------------------
+
+        // Only process if this engineer is in our target list
+        if (engStats[email]) {
+          const bill = Number(t.billable) || 0;
+          const nonBill = Number(t.nonBillable) || 0;
+          
+          engStats[email].billable += bill;
+          engStats[email].nonBillable += nonBill;
+          engStats[email].total += (bill + nonBill);
+          engStats[email].tickets += (Number(t.ticketsClosed) || 0);
+          engStats[email].hasData = true;
+        }
+      });
+
+      // 4. Calculate Aggregates
+      let totalBill = 0;
+      let totalHours = 0;
+      let activeCount = 0; // People who actually worked
+      let assignedCount = targetEmails.length; // Total headcount
+
+      // For the Chart
+      let clientDistribution = {}; 
+
+      Object.values(engStats).forEach(s => {
+        totalBill += s.billable;
+        totalHours += s.total;
+        if(s.hasData) activeCount++;
+
+        // Group for chart
+        if(!clientDistribution[s.client]) clientDistribution[s.client] = 0;
+        clientDistribution[s.client]++;
+      });
+
+      const util = totalHours > 0 ? (totalBill / totalHours) * 100 : 0;
+
+      // 5. Update UI
+      document.getElementById("engineersAssigned").textContent = assignedCount; // Now shows Full Roster (e.g. 8)
+      
+      const utilEl = document.getElementById("avgUtilization");
+      utilEl.textContent = Math.round(util) + "%";
+      utilEl.className = "val";
+      if(util >= 80) utilEl.classList.add("green");
+      else if(util >= 70) utilEl.classList.add("amber");
+
+      document.getElementById("totalBillableHours").textContent = totalBill.toFixed(1);
+
+      // Update Charts & Tables
+      updateDistributionChart(engStats);
+      updateClientSummary(clientDistribution);
+      updateEngineerTable(Object.values(engStats));
+    }
+
+    function updateClientSummary(distribution) {
+      const container = document.getElementById("clientSummary");
+      container.innerHTML = "";
+      
+      const entries = Object.entries(distribution);
+      if(entries.length === 0) {
+        container.innerHTML = '<div class="no-data">No data</div>';
+        return;
+      }
+
+      entries.sort((a,b) => b[1] - a[1]).forEach(([client, count]) => {
+        const div = document.createElement("div");
+        div.className = "stat-item";
+        div.innerHTML = `
+          <span class="label">${client}</span>
+          <span class="value">${count} engineers</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function updateEngineerTable(statsArray) {
+      const tbody = document.getElementById("engineerTableBody");
+      tbody.innerHTML = "";
+
+      if(statsArray.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="no-data">No engineers found for this client.</td></tr>`;
+        return;
+      }
+
+      // Sort: Active users first, then by utilization
+      statsArray.sort((a, b) => {
+        if (b.hasData !== a.hasData) return b.hasData - a.hasData; 
+        return b.billable - a.billable;
+      });
+
+      statsArray.forEach(s => {
+        const util = s.total > 0 ? Math.round((s.billable / s.total) * 100) : 0;
+        let badgeClass = "low";
+        if (util >= 80) badgeClass = "high";
+        else if (util >= 70) badgeClass = "medium";
+        
+        // Visual cue for no data
+        const utilDisplay = s.hasData ? `<span class="util-badge ${badgeClass}">${util}%</span>` : `<span style="color:var(--muted);font-size:12px">No Data</span>`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <div style="font-weight:500">${s.name}</div>
+          </td>
+          <td>${s.client}</td>
+          <td>${s.billable.toFixed(1)}</td>
+          <td>${utilDisplay}</td>
+          <td>${s.tickets}</td>
+          <td>${s.manager}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateDistributionChart(engStats) {
+      const ctx = document.getElementById("utilizationChart").getContext("2d");
+      
+      // Filter engineers with data and sort by utilization
+      const engineers = Object.values(engStats)
+        .filter(e => e.hasData)
+        .sort((a, b) => {
+          const utilA = (a.billable / (a.billable + a.nonBillable)) * 100 || 0;
+          const utilB = (b.billable / (b.billable + b.nonBillable)) * 100 || 0;
+          return utilB - utilA;
+        });
+      
+      const labels = engineers.map(e => e.name);
+      const billableData = engineers.map(e => e.billable);
+      const nonBillableData = engineers.map(e => e.nonBillable);
+      
+      // Calculate utilization percentages
+      const utilData = engineers.map(e => {
+        const total = e.billable + e.nonBillable;
+        return total > 0 ? Math.round((e.billable / total) * 100) : 0;
+      });
+      
+      if (charts.util) charts.util.destroy();
+      if (labels.length === 0) return;
+
+      charts.util = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Billable Hours',
+              data: billableData,
+              backgroundColor: 'rgba(54, 162, 235, 0.7)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Non-Billable Hours',
+              data: nonBillableData,
+              backgroundColor: 'rgba(255, 99, 132, 0.7)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Utilization %',
+              data: utilData,
+              type: 'line',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(0, 0, 0, 0)',
+              borderWidth: 2,
+              pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+              pointRadius: 4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12, padding: 16 }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+
+    function showLoadingState() {
+        document.getElementById("engineersAssigned").textContent = "...";
+        document.getElementById("avgUtilization").textContent = "...";
+        document.getElementById("totalBillableHours").textContent = "...";
+        document.getElementById("engineerTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px">Loading...</td></tr>`;
+    }
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById("refresh").addEventListener("click", initDashboard);
+    document.getElementById("period").addEventListener("change", initDashboard);
+    document.getElementById("clientSelector").addEventListener("change", renderDashboard);
+
+  </script>
+</body>
+</html>

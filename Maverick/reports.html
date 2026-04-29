@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reports — Utilization Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="css/manager-common.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#f3f7fb; --card:#fff; --muted:#6b7280; --accent:#2563eb;
+      --accent-2:#1e3a8a; --red:#ef4444; --amber:#f59e0b; --green:#10b981;
+      --kpi-target:#0f172a; --kpi-title:#6b7280;
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;background:var(--bg);color:#0f172a}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:240px;background:#fff;padding:28px 18px;border-right:1px solid rgba(0,0,0,.05);display:flex;flex-direction:column}
+    .logo{display:flex;align-items:center;gap:12px}
+    .ico{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+    .nav a{padding:12px;border-radius:10px;color:var(--muted);text-decoration:none}
+    .nav a.active{background:#eef6ff;color:var(--accent);font-weight:600}
+    .nav a:hover{background:#f8fafc;color:var(--accent)}
+    .user{margin-top:auto;padding-top:18px;border-top:1px solid rgba(0,0,0,.04)}
+    .user-info{display:flex;align-items:center;gap:12px}
+    .user-menu{position:absolute;top:22px;right:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:100;min-width:120px}
+    .user-menu-top{display:flex;align-items:center;gap:10px}
+    .signout{padding:6px 14px;border-radius:6px;border:1px solid #fee2e2;color:#b91c1c;background:#fff;cursor:pointer;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.2s ease;white-space:nowrap;width:100%;text-align:center}
+    .signout:hover{background:#fee2e2}
+    .main{flex:1;padding:22px;overflow-x:auto;position:relative}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;padding-right:140px}
+    .title h1{margin:0;font-size:26px;font-weight:700}
+    .title .subtitle{color:var(--muted);margin-top:4px;font-size:14px}
+    .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .select,.btn{padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:var(--card);font-size:14px}
+    .select{min-width:140px}
+    .btn{background:linear-gradient(90deg,var(--accent),#4f46e5);color:#fff;border:none;cursor:pointer;font-weight:600}
+    .btn:hover{opacity:0.9}
+    .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,.1);color:var(--accent);font-weight:600}
+    .btn.ghost:hover{background:#f8fafc}
+
+    /* Card grid */
+    .card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    .card{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 6px 18px rgba(12,18,30,0.04);display:flex;flex-direction:column}
+    .card h3{margin:0;color:var(--muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+    .card .val{font-size:28px;font-weight:700;margin-top:8px;color:#0f172a}
+    .card .sub{color:var(--muted);margin-top:6px;font-size:12px}
+
+    /* Charts and panels */
+    .panels{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:20px}
+    .panel{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 8px 30px rgba(12,18,30,0.04)}
+    .panel h4{margin:0 0 16px;font-size:16px;font-weight:700;color:#0f172a}
+    .panel h4 + hr{margin-top:12px;margin-bottom:16px;border:none;border-top:1px solid #eef2f6}
+    .chart-container{position:relative;height:280px;margin-top:12px}
+    .chart-container canvas{max-height:100%}
+
+    /* Top performers list */
+    .top-list{display:flex;flex-direction:column;gap:12px}
+    .top-item{display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8fafc;border-radius:8px}
+    .top-item .info{flex:1}
+    .top-item .name{font-weight:700;color:#0f172a;font-size:15px}
+    .top-item .meta{font-size:12px;color:var(--muted);margin-top:4px}
+    .top-item .value{font-weight:700;color:var(--accent);font-size:16px}
+
+    /* Table */
+    .table-container{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 8px 30px rgba(12,18,30,0.04);overflow-x:auto}
+    .table-container h4{margin:0 0 16px;font-size:16px;font-weight:700;color:#0f172a}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    thead{background:#f8fafc}
+    th,td{padding:12px;text-align:left;border-bottom:1px solid #eef2f6}
+    th{font-weight:700;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:0.5px}
+    td{color:#0f172a}
+    tbody tr:hover{background:#f8fafc}
+    tbody tr:last-child td{border-bottom:none}
+
+    /* Empty state */
+    .no-data{text-align:center;color:var(--muted);padding:40px;font-size:14px}
+
+    /* Responsive */
+    @media(max-width:1200px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:980px){.panels{grid-template-columns:1fr}.card-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){.sidebar{display:none}.main{padding:12px}.card-grid{grid-template-columns:1fr}.header{flex-direction:column;align-items:flex-start;padding-right:110px}.user-menu{top:12px;right:12px;min-width:100px}}
+  </style>
+<script>if(window.self !== window.top) { document.write('<style>.sidebar{display:none !important;} .app{flex-direction:column;} .main{margin-left:0 !important; padding:15px !important;}</style>'); }</script></head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="favicon.png" style="width:44px; height:44px; border-radius:10px; object-fit:contain;">
+        <div><div style="font-weight:700">Performance</div><div style="color:var(--muted);font-size:13px">Tracker</div></div>
+      </div>
+      
+	  <nav class="nav">
+        <a href="updated.html"><i>📊</i> Dashboard</a>
+        <a href="teammembers.html"><i>👥</i> Team Members</a>
+        <a href="reports.html" class="active"><i>📈</i> Team Performance</a>
+		<a href="attendance.html"><i>📅</i> Attendance</a>
+        <a href="clientreporting.html"><i>🏢</i> Client Wise Reporting</a>
+        <a href="attrition.html"><i>📉</i> Attrition</a>
+        <a href="billing.html"><i>💰</i> Billing</a>
+        <a href="levelups.html"><i>🎯</i> Level Ups</a>
+      </nav>
+	  
+      <div class="user">
+        <div class="user-info">
+          <div id="userAvatar" style="width:40px;height:40px;border-radius:999px;background:#e6eefc;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700">U</div>
+          <div><div id="userName" style="font-weight:600;font-size:15px">User</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-top">
+          <div id="headerUserAvatar" class="user-avatar">U</div>
+          <div id="headerUserName" class="user-name">User</div>
+        </div>
+        <button class="signout" id="signOut">Sign Out</button>
+      </div>
+      <div class="header">
+        <div class="title">
+          <h1>Reports & Analytics</h1>
+          <div class="subtitle">Detailed insights into team performance and utilization metrics.</div>
+        </div>
+        <div class="controls">
+          <input type="month" id="filterMonth" class="select" />
+          <button id="refreshBtn" class="btn ghost">⟳ Refresh</button>
+          <button id="exportCsv" class="btn">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <h3>Avg Utilization</h3>
+          <div class="val" id="avgUtil">—</div>
+          <div class="sub">Team average</div>
+        </div>
+        <div class="card">
+          <h3>Total Billable Hrs</h3>
+          <div class="val" id="totalBillable">—</div>
+          <div class="sub">For selected period</div>
+        </div>
+        <div class="card">
+          <h3>Tickets Closed</h3>
+          <div class="val" id="totalClosed">—</div>
+          <div class="sub">Across all engineers</div>
+        </div>
+        <div class="card">
+          <h3>Missing Sheets</h3>
+          <div class="val" id="missing">—</div>
+          <div class="sub">Estimated missing entries</div>
+        </div>
+      </div>
+
+      <div class="panels">
+        <div class="panel">
+          <h4>Resource Utilization by Engineer</h4>
+          <div class="chart-container">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h4>Top Performers</h4>
+          <div id="topList" class="top-list">
+            <div class="no-data">Loading...</div>
+          </div>
+          <hr>
+          <h4>Distribution by Activity</h4>
+          <div class="chart-container">
+            <canvas id="pieChart"></canvas>
+          </div>
+          <hr>
+          <h4>Attendance Overview</h4>
+          <div class="chart-container">
+            <canvas id="attendanceChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <h4>Timesheet Entries</h4>
+        <table id="entriesTbl">
+          <thead>
+            <tr>
+              <th>Engineer</th>
+              <th>Date</th>
+              <th>Billable</th>
+              <th>Non-billable</th>
+              <th>Tags</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </main>
+    </div>
+  </div>
+
+  <script type="module">
+    // Firebase (same simple config used across the app) — safe to include for client usage
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+    
+    // Handle user menu interactions
+    const userMenu = document.getElementById('userMenu');
+    
+    if (userMenu) {
+      // Toggle menu on mobile
+      userMenu.addEventListener('click', (e) => {
+        if (e.target === userMenu || e.target.closest('.user-menu-top')) {
+          userMenu.classList.toggle('active');
+        }
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!userMenu.contains(e.target) && !e.target.matches('.signout')) {
+          userMenu.classList.remove('active');
+        }
+      });
+      
+      // Close menu on window resize (in case of orientation change)
+      window.addEventListener('resize', () => {
+        userMenu.classList.remove('active');
+      });
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOwKXnOXAw_hl3ZTYjtPnMJG_TiSHm8rY",
+      authDomain: "utilizationtracker.firebaseapp.com",
+      projectId: "utilizationtracker",
+      storageBucket: "utilizationtracker.firebasestorage.app",
+      messagingSenderId: "67928414030",
+      appId: "1:67928414030:web:2cae8e72eeb146820b701f",
+      measurementId: "G-6LE13CNF0K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const $ = id => document.getElementById(id);
+
+    // Require sign-in to view reports (redirect to login if not signed in)
+    onAuthStateChanged(auth, async user => {
+      if(!user){
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login.html?returnUrl=${returnUrl}`;
+      } else {
+        // Load user profile
+        try {
+          const { getDoc } = await import("https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js");
+          const userRef = doc(db, 'users', user.uid);
+          const snap = await getDoc(userRef);
+          const profile = snap.exists() ? snap.data() : {};
+          
+          let displayName = profile.name || user.displayName || '';
+          if(!displayName && user.email){
+            const local = user.email.split('@')[0].replace(/[._]/g,' ');
+            displayName = local.split(' ').map(p=> p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
+          }
+          
+          const initials = displayName ? displayName.split(' ').map(x=>x[0]||'').slice(0,2).join('').toUpperCase() : 'U';
+          $('userName').textContent = displayName || 'User';
+          $('headerUserName').textContent = displayName || 'User';
+          $('userAvatar').textContent = initials;
+          $('headerUserAvatar').textContent = initials;
+        } catch(err) {
+          console.error('Error loading user profile:', err);
+        }
+        
+        // Load once signed in
+        init();
+      }
+    });
+
+    // Fetch entries
+    async function loadEntries(){
+      const col = collection(db, 'timesheet_entries');
+      const snap = await getDocs(col);
+      return snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    }
+
+    // NEW: Load attendance
+    async function loadAttendance() {
+      const col = collection(db, 'attendance');
+      const snap = await getDocs(col);
+      return snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    }
+
+    function monthKeyFromISO(iso){
+      if(!iso) return null;
+      return iso.slice(0,7); // YYYY-MM
+    }
+
+    function escapeHtml(text){
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Global caches and charts - UPDATED
+    let cachedEntries = [];
+    let cachedAttendance = [];
+    let barChart, pieChart, attendanceChart;
+
+    // compute and render - UPDATED
+    async function computeAndRender(){
+      const entries = cachedEntries.slice();
+      // apply month filter
+      const selMonth = $('filterMonth').value; // YYYY-MM
+      const filtered = selMonth ? entries.filter(e => (e.date||'').startsWith(selMonth)) : entries;
+
+      // NEW: filter attendance for the same month
+      const monthAttendance = selMonth
+        ? cachedAttendance.filter(a => (a.date || '').startsWith(selMonth))
+        : cachedAttendance;
+
+      // ---------- Attendance metrics ----------
+      const statusOrder = ['present','wfh','wfo','pto','holiday','unpaid'];
+      const statusLabels = {
+        present:'Present',
+        wfh:'WFH',
+        wfo:'WFO',
+        pto:'PTO',
+        holiday:'Holiday',
+        unpaid:'Unpaid'
+      };
+      const statusColors = {
+        present:'#10b981',
+        wfh:'#3b82f6',
+        wfo:'#8b5cf6',
+        pto:'#f59e0b',
+        holiday:'#f97316',
+        unpaid:'#ef4444'
+      };
+
+      const statusCounts = {};
+      monthAttendance.forEach(a => {
+        const st = a.status || 'present';
+        statusCounts[st] = (statusCounts[st] || 0) + 1;
+      });
+
+      const attLabels = statusOrder.filter(s => statusCounts[s]).map(s => statusLabels[s]);
+      const attData   = statusOrder.filter(s => statusCounts[s]).map(s => statusCounts[s]);
+      const attColors = statusOrder.filter(s => statusCounts[s]).map(s => statusColors[s]);
+
+      renderAttendanceChart(attLabels, attData, attColors);
+
+      // totals
+      let totalBill = 0, totalClosed = 0;
+      const byEngineer = new Map();
+      const activityCount = {};
+
+      // build engineer set from entries
+      filtered.forEach(e => {
+        const eng = (e.engineer||'Unknown').trim();
+        const billable = Number(e.billable||0);
+        totalBill += billable;
+        totalClosed += Number(e.ticketsClosed||0);
+
+        if(!byEngineer.has(eng)) byEngineer.set(eng, { billable:0, days: new Set() });
+        const st = byEngineer.get(eng);
+        st.billable += billable;
+        st.days.add(e.date);
+
+        // activities
+        const tags = Array.isArray(e.nonBillableTags) ? e.nonBillableTags : [];
+        tags.forEach(t => activityCount[t] = (activityCount[t]||0)+1);
+      });
+
+      // average utilization: assume 8 hours per day, compute avg util across engineers with data
+      let utilSum = 0, utilCount = 0;
+      byEngineer.forEach((v,k)=>{
+        const days = v.days.size || 0;
+        if(days>0){ utilSum += (v.billable / (8*days)); utilCount++; }
+      });
+      const avgUtil = utilCount ? Math.round((utilSum/utilCount)*100) : 0;
+
+      // missing sheets: naive approach - assume we have a master engineer list from current entries
+      const engineers = Array.from(byEngineer.keys());
+      // for each engineer, count days in selected month and compare to possible workdays (rough: 20)
+      const missing = Math.max(0, engineers.length * 20 - filtered.length);
+
+      // render cards
+      $('avgUtil').textContent = avgUtil + '%';
+      $('totalBillable').textContent = totalBill.toFixed(1) + 'h';
+      $('totalClosed').textContent = totalClosed;
+      $('missing').textContent = missing;
+
+      // bar chart data
+      const sorted = Array.from(byEngineer.entries()).map(([k,v])=>({eng:k,bill:v.billable,days:v.days.size})).sort((a,b)=>b.bill-a.bill).slice(0,20);
+      const labels = sorted.map(x=>x.eng);
+      const data = sorted.map(x=>Math.round(x.bill));
+      renderBar(labels,data);
+
+      // top performers (by avg util)
+      const perf = Array.from(byEngineer.entries()).map(([k,v])=>({eng:k,avg: v.days.size? (v.billable/(8*v.days.size))*100 : 0,hrs:v.billable})).sort((a,b)=>b.avg-a.avg).slice(0,5);
+      renderTopList(perf);
+
+      // pie chart from activityCount
+      const pieLabels = Object.keys(activityCount);
+      const pieData = pieLabels.map(k=>activityCount[k]);
+      renderPie(pieLabels,pieData);
+
+      // table
+      const tbody = document.querySelector('#entriesTbl tbody');
+      if(filtered.length === 0){
+        tbody.innerHTML = '<tr><td colspan="6" class="no-data" style="text-align:center;padding:40px">No entries found for selected filters</td></tr>';
+      } else {
+        tbody.innerHTML = '';
+        filtered.slice().reverse().forEach(e=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(e.engineer||'')}</td>
+            <td>${escapeHtml(e.date||'')}</td>
+            <td><strong>${Number(e.billable||0).toFixed(2)}h</strong></td>
+            <td>${Number(e.nonBillable||0).toFixed(2)}h</td>
+            <td>${escapeHtml(Array.isArray(e.nonBillableTags)? e.nonBillableTags.join(', '): '')}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(e.comment||'')}">${escapeHtml(e.comment||'')}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    // chart helpers
+    function renderBar(labels,data){
+      const ctx = $('barChart').getContext('2d');
+      if(barChart) barChart.destroy();
+      const colors = data.map(val => {
+        const util = (val / 160) * 100; // Assuming 160 working hours per month
+        if(util >= 80) return 'rgba(16,185,129,0.85)';
+        if(util >= 60) return 'rgba(245,158,11,0.85)';
+        return 'rgba(239,68,68,0.85)';
+      });
+      barChart = new Chart(ctx, {
+        type:'bar',
+        data:{labels, datasets:[{label:'Billable hours', data, backgroundColor:colors, borderRadius:8}]},
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{legend:{display:false}},
+          scales:{
+            y:{beginAtZero:true, ticks:{precision:0}},
+            x:{ticks:{maxRotation:45, minRotation:45}}
+          }
+        }
+      });
+    }
+
+    function renderPie(labels,data){
+      const ctx = $('pieChart').getContext('2d');
+      if(pieChart) pieChart.destroy();
+      const colors = ['#2563eb','#3b82f6','#60a5fa','#f59e0b','#ef4444','#10b981','#8b5cf6','#ec4899'];
+      pieChart = new Chart(ctx, {
+        type:'doughnut',
+        data:{labels,datasets:[{data,backgroundColor:colors.slice(0,labels.length)}]},
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{legend:{position:'bottom', labels:{padding:12, usePointStyle:true}}}
+        }
+      });
+    }
+
+    // NEW: Attendance chart renderer
+    function renderAttendanceChart(labels, data, colors){
+      const ctx = $('attendanceChart').getContext('2d');
+      if (attendanceChart) attendanceChart.destroy();
+
+      if (!labels.length) {
+        attendanceChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['No data'],
+            datasets: [{ data: [1], backgroundColor: ['#e5e7eb'] }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+          }
+        });
+        return;
+      }
+
+      attendanceChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{ data, backgroundColor: colors }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { padding: 12, usePointStyle: true }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTopList(list){
+      const container = $('topList');
+      if(!list || list.length === 0){
+        container.innerHTML = '<div class="no-data">No data available</div>';
+        return;
+      }
+      container.innerHTML = '';
+      list.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'top-item';
+        el.innerHTML = `
+          <div class="info">
+            <div class="name">${escapeHtml(item.eng)}</div>
+            <div class="meta">${Math.round(item.avg)}% avg utilization</div>
+          </div>
+          <div class="value">${Math.round(item.hrs)}h</div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    // export CSV
+    function exportCSV(){
+      const rows = document.querySelectorAll('#entriesTbl tbody tr');
+      if(!rows.length){ alert('No rows to export'); return; }
+      let csv = 'Engineer,Date,Billable,NonBillable,Tags,Notes\n';
+      rows.forEach(r=>{
+        const cols = Array.from(r.querySelectorAll('td')).map(td => '"'+String(td.textContent||'').replace(/"/g,'""')+'"');
+        csv += cols.join(',')+'\n';
+      });
+      const blob = new Blob([csv],{type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href = url; 
+      a.download = 'utilization_report.csv'; 
+      a.click(); 
+      URL.revokeObjectURL(url);
+    }
+
+    // init wiring
+    $('refreshBtn').addEventListener('click', async ()=>{ await refreshAndRender(); });
+    $('exportCsv').addEventListener('click', exportCSV);
+    $('filterMonth').addEventListener('change', computeAndRender);
+
+    // UPDATED: refresh both entries and attendance
+    async function refreshAndRender(){
+      [cachedEntries, cachedAttendance] = await Promise.all([
+        loadEntries(),
+        loadAttendance()
+      ]);
+      computeAndRender();
+    }
+
+    // Sign out handler
+    $('signOut').addEventListener('click', async ()=>{ 
+      try {
+        await auth.signOut();
+        window.location.href='/login.html';
+      } catch(err) {
+        console.error('Sign out failed:', err);
+        alert('Could not sign out: ' + (err.message || err));
+      }
+    });
+
+    async function init(){
+      // default month to current
+      const now = new Date();
+      $('filterMonth').value = now.toISOString().slice(0,7);
+      await refreshAndRender();
+    }
+
+  </script>
+</body>
+</html>
+

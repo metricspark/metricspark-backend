@@ -516,7 +516,16 @@ function startRealtime() {
     allData = []; 
     allDocs = [];
 
-    snap.forEach(docSnap => {
+    // Sort documents by date ascending
+    let docsArray = [];
+    snap.forEach(docSnap => docsArray.push(docSnap));
+    docsArray.sort((a, b) => {
+      const dateA = a.data().date || "";
+      const dateB = b.data().date || "";
+      return dateA.localeCompare(dateB);
+    });
+
+    docsArray.forEach(docSnap => {
       const d = docSnap.data();
 
       let util = 0;

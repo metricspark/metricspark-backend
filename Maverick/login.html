@@ -1,0 +1,310 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign In – Utilization Tracker</title>
+<link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: linear-gradient(135deg, #0b5cff, #6aa7ff);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 40px 45px;
+      border-radius: 16px;
+      width: 380px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      text-align: center;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    img.logo {
+      width: 150px;
+      margin-bottom: 15px;
+    }
+
+    h2 {
+      margin-top: 5px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    .btn {
+      background: #0b5cff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .btn:hover {
+      background: #004ae0;
+    }
+
+    .link {
+      display: block;
+      margin-top: 12px;
+      font-size: 14px;
+      color: #0b5cff;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    #errorMessage {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+<script>if(window.self !== window.top) { document.write('<style>.sidebar{display:none !important;} .app{flex-direction:column;} .main{margin-left:0 !important; padding:15px !important;}</style>'); }</script></head>
+
+<body>
+
+  <div class="card">
+
+    <img src="ITBDLOGO.webp" class="logo" alt="IT By Design Logo">
+
+    <h2>Please Sign In To Continue</h2>
+
+    <input id="email" type="email" placeholder="Email" required>
+    <input id="password" type="password" placeholder="Password" required>
+
+    <button class="btn" id="signinBtn">Sign in</button>
+    <button class="btn" style="background:#e9eefc; color:#0b5cff;" id="signupBtn">Sign up</button>
+
+    <a class="link" id="forgotPass">Forgot password?</a>
+
+    <div id="errorMessage"></div>
+
+  </div>
+
+  <!-- Firebase SDKs -->
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getAuth,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCOwKXnOXAw_hl3ZTYjtPnMJG_TiSHm8rY",
+    authDomain: "utilizationtracker.firebaseapp.com",
+    projectId: "utilizationtracker",
+    storageBucket: "utilizationtracker.firebasestorage.app",
+    messagingSenderId: "67928414030",
+    appId: "1:67928414030:web:2cae8e72eeb146820b701f",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const errorBox = document.getElementById("errorMessage");
+
+  function showError(msg) {
+    errorBox.style.display = "block";
+    errorBox.textContent = msg;
+  }
+
+  function hideError() {
+    errorBox.style.display = "none";
+    errorBox.textContent = "";
+  }
+
+  function validateDomain(email) {
+    return email.toLowerCase().endsWith("@itbd.net");
+  }
+
+  // --- ROLE REDIRECT LOGIC ---
+  async function redirectByRole(user) {
+    try {
+      if (!user) return;
+      const ref = doc(db, "users", user.uid);
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        const role = (snap.data().role || "engineer").toString().toLowerCase();
+        if (role === "manager") {
+          window.location.href = "updated.html";
+        } else {
+          window.location.href = "timesheet.html";
+        }
+      } else {
+        // create default engineer doc and redirect
+        await setDoc(ref, {
+          role: "engineer",
+          email: user.email || "",
+          createdAt: Date.now()
+        });
+        window.location.href = "timesheet.html";
+      }
+    } catch (err) {
+      console.error("Redirect error:", err);
+      showError("Unable to determine role. Try again.");
+    }
+  }
+
+  // ensure any already-signed-in user is routed correctly on page load
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      redirectByRole(user);
+    } else {
+      hideError();
+    }
+  });
+
+  // -------------------------
+  // SIGN IN
+  // -------------------------
+  function handleSignIn() {
+    hideError();
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+
+    if (!validateDomain(email)) {
+      showError("Please use your ITBD login (@itbd.net).");
+      return;
+    }
+
+    signInWithEmailAndPassword(auth, email, password)
+      .catch(err => {
+        let msg = "Something went wrong. Please try again.";
+
+        if (err.code === "auth/user-not-found")
+          msg = "No account found. Please sign up first.";
+        else if (err.code === "auth/wrong-password")
+          msg = "Incorrect password. Please try again.";
+        else if (err.code === "auth/invalid-credential")
+          msg = "Invalid login details. Please check your email and password.";
+        else if (err.code === "auth/too-many-requests")
+          msg = "Too many attempts. Please wait and try again.";
+
+        showError(msg);
+      });
+  };
+
+  // Add click event for sign in button
+  document.getElementById("signinBtn").addEventListener("click", handleSignIn);
+  
+  // Add Enter key support in password field
+  passwordInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleSignIn();
+    }
+  });
+  
+  // Add Enter key support in email field
+  emailInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleSignIn();
+    }
+  });
+
+  // -------------------------
+  // SIGN UP
+  // -------------------------
+  document.getElementById("signupBtn").addEventListener("click", async () => {
+    hideError();
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+
+    if (!validateDomain(email)) {
+      showError("Please use your ITBD login (@itbd.net).");
+      return;
+    }
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(async (cred) => {
+        // create user record with default role engineer
+        try {
+          await setDoc(doc(db, "users", cred.user.uid), {
+            role: "engineer",
+            email: email,
+            createdAt: Date.now()
+          });
+          // redirect will be handled by onAuthStateChanged -> redirectByRole
+        } catch (err) {
+          console.error("Error creating user doc:", err);
+          showError("Account created but failed to initialize profile.");
+        }
+      })
+      .catch(err => {
+        let msg = "Unable to create account.";
+
+        if (err.code === "auth/email-already-in-use")
+          msg = "This email already has an account. Try signing in.";
+        else if (err.code === "auth/weak-password")
+          msg = "Password is too weak. Try a stronger one.";
+        else if (err.code === "auth/invalid-email")
+          msg = "Invalid email format. Please check and try again.";
+
+        showError(msg);
+      });
+  });
+
+  // -------------------------
+  // FORGOT PASSWORD
+  // -------------------------
+  document.getElementById("forgotPass").addEventListener("click", () => {
+    const email = emailInput.value.trim().toLowerCase();
+
+    if (!validateDomain(email)) {
+      showError("Please enter your @itbd.net email first.");
+      return;
+    }
+
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        showError("Password reset email sent!");
+      })
+      .catch(err => {
+        console.error(err);
+        showError("Could not send reset email. Please try again.");
+      });
+  });
+
+</script>
+</body>
+</html>
+

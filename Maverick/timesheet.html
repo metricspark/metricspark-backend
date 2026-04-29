@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Engineer Timesheet — Utilization Tracker</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root {
+      --bg-a: #0ea5ff;
+      --bg-b: #2ca6ff;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --accent: #0b5cff;
+      --pill: #eef7ff;
+      --radius: 14px;
+      --leave-h: #facc15;
+      /* Holiday (red) */
+      --leave-pt: #facc15;
+      /* PTO (amber) */
+      --leave-text: #fff;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: Inter, system-ui, Arial;
+      color: #0f172a;
+      background: linear-gradient(135deg, var(--bg-a), var(--bg-b));
+      -webkit-font-smoothing: antialiased
+    }
+
+    .hero-wrap {
+      max-width: 1100px;
+      margin: 42px auto 12px;
+      padding: 0 20px
+    }
+
+    .hero {
+      border-radius: 22px;
+      padding: 28px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+      box-shadow: 0 16px 40px rgba(8, 19, 60, 0.12);
+      text-align: center;
+      color: #fff
+    }
+
+    .hero h1 {
+      margin: 6px 0;
+      font-size: 28px;
+      font-weight: 800
+    }
+
+    .hero p {
+      margin: 0;
+      opacity: 0.95
+    }
+
+    .wrap {
+      max-width: 1000px;
+      margin: 18px auto 60px;
+      padding: 0 20px
+    }
+
+    .main-card {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 18px;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 14px 36px rgba(12, 20, 40, 0.08)
+    }
+
+    @media(max-width:980px) {
+      .main-card {
+        grid-template-columns: 1fr;
+      }
+
+      .cal-wrap {
+        order: 2
+      }
+    }
+
+    /* form */
+    .card-section {
+      padding: 6px
+    }
+
+    .muted {
+      color: var(--muted)
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 6px
+    }
+
+    .req {
+      color: #ff4d4f;
+      margin-right: 6px;
+      font-weight: 800;
+    }
+
+    input[type=text],
+    input[type=number],
+    input[type=date],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #eef2f6;
+      font-size: 14px;
+      background: #fff;
+      box-sizing: border-box
+    }
+
+    input[readonly] {
+      background: #f8fafc
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+      padding-top: 10px
+    }
+
+    .pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--pill);
+      border: 1px solid rgba(14, 106, 255, 0.06);
+      font-weight: 600;
+      color: #0b5cff;
+      cursor: pointer
+    }
+
+    .pill input {
+      margin: 0
+    }
+
+    .pill.required-warning {
+      box-shadow: 0 0 0 3px rgba(255, 99, 71, 0.08);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px
+    }
+
+    .btn {
+      background: var(--accent);
+      border: none;
+      color: white;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid rgba(11, 92, 255, 0.12);
+      color: var(--accent)
+    }
+
+    .submeta {
+      margin-left: auto;
+      color: var(--muted);
+      align-self: center
+    }
+
+    textarea.required {
+      border-color: #ff6b6b !important;
+      box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.06);
+    }
+
+    /* calendar */
+    .cal-wrap {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 10px 28px rgba(12, 20, 40, 0.06)
+    }
+
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px
+    }
+
+    .cal-day {
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px
+    }
+
+    .cal-day.empty {
+      background: transparent;
+      color: rgba(0, 0, 0, 0.18);
+      font-weight: 600;
+      cursor: default
+    }
+
+    .cal-day.red {
+      background: #ff6b6b
+    }
+
+    .cal-day.blue {
+      background: #22c55e !important;
+      /* Green */
+    }
+
+    .cal-day.leave-h {
+      background: var(--leave-h);
+      color: var(--leave-text);
+      font-weight: 900
+    }
+
+    .cal-day.leave-pt {
+      background: var(--leave-pt);
+      color: var(--leave-text);
+      font-weight: 900
+    }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 6px
+    }
+
+    .weekday {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center
+    }
+
+    .count-badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f3f8ff;
+      color: var(--accent);
+      font-weight: 700
+    }
+
+    .hint {
+      font-size: 13px;
+      color: var(--muted)
+    }
+
+    .field-full {
+      grid-column: 1 / -1
+    }
+
+    .disabled-overlay {
+      opacity: 0.6;
+      pointer-events: none
+    }
+
+    /* Calendar selected date highlight */
+    .cal-day.selected {
+      background: #4da3ff !important;
+      color: #000 !important;
+      /* Black text for better contrast */
+      font-weight: bold;
+      position: relative;
+      z-index: 1;
+      border-radius: 8px !important;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Toast styles */
+    #toast {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      background: #22c55e;
+      color: #fff;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.18);
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.35s ease;
+      z-index: 9999;
+      pointer-events: none
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    /* Date + leave controls */
+    .date-row {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .leave-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-left: 6px
+    }
+
+    .leave-controls label {
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer
+    }
+
+    .leave-controls input {
+      transform: scale(1.05);
+      margin-right: 6px
+    }
+
+    /* Sign out button hover */
+    #signOutBtn:hover {
+      background: #fee2e2
+    }
+  </style>
+<script>if(window.self !== window.top) { document.write('<style>.sidebar{display:none !important;} .app{flex-direction:column;} .main{margin-left:0 !important; padding:15px !important;}</style>'); }</script></head>
+
+<body>
+
+  <div style="
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 16px;
+    border-radius: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  ">
+    <!-- Profile Photo -->
+    <div id="profilePhoto" style="
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #e6f0ff;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1e3a8a;
+      font-weight: 600;
+      font-size: 18px;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      overflow: hidden;
+    "></div>
+
+    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+      <div id="engineerDisplayName" style="
+        font-weight: 600;
+        color: #1e3a8a;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+      ">Loading...</div>
+      <button id="signOutBtn" style="
+        padding: 4px 10px;
+        margin-top: 2px;
+        border-radius: 6px;
+        border: 1px solid #fee2e2;
+        color: #b91c1c;
+        background: #fff;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+      ">
+        Sign Out
+      </button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div class="hero-wrap">
+    <div class="hero">
+      <h1>Engineer Daily Timesheet</h1>
+      <p>Fill this every day to keep your utilization updated.</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="main-card">
+
+      <!-- LEFT: Form -->
+      <div class="card-section">
+        <p class="muted" style="margin:0 0 12px">You must sign in to save/view entries.</p>
+
+        <form id="entryForm">
+          <div class="row">
+            <div>
+              <label><span class="req">*</span>Engineer name</label>
+              <input id="engineerName" type="text" placeholder="Sign in to auto-fill" readonly />
+            </div>
+
+            <div>
+              <label>Manager</label>
+              <input id="managerDisplay" type="text" readonly placeholder="Loading manager..." />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label><span class="req">*</span>Date</label>
+              <div class="date-row">
+                <input id="entryDate" type="date" />
+                <div class="leave-controls">
+                  <label><input type="checkbox" id="isHoliday"> Holiday</label>
+                  <label><input type="checkbox" id="isPTO"> PTO</label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label><span class="req">*</span>Billable hours (hrs)</label>
+              <input id="billable" type="number" step="0.01" min="0" max="24" placeholder="e.g. 3.6" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label><span class="req">*</span>Non-billable hours (auto)</label>
+              <input id="nonBillable" type="number" readonly />
+            </div>
+
+            <div>
+              <label><span class="req">*</span>Tickets worked</label>
+              <input id="ticketsWorked" type="number" min="0" value="0" />
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label><span class="req">*</span>Please select your non-billable for today (all that apply)</label>
+            <div class="pills" id="nonBillableTags">
+              <label class="pill"><input type="checkbox" class="nonbill-tag" value="Admin Activities"> Admin
+                Activities</label>
+              <label class="pill"><input type="checkbox" class="nonbill-tag" value="No Work From Client"> No Work From
+                Client</label>
+              <label class="pill"><input type="checkbox" class="nonbill-tag" value="Team Meetings"> Team
+                Meetings</label>
+              <label class="pill" id="pillOtherLabel"><input type="checkbox" class="nonbill-tag" value="Other"
+                  id="nonbill_other"> Other</label>
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label>Notes <span style="color:#d00">*</span></label>
+            <textarea id="notes" placeholder="Non-Billable Notes, Short notes..." required></textarea>
+            <div id="notesHint" style="font-size:12px;color:var(--muted)"></div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label><span class="req">*</span>Tickets closed</label>
+              <input id="ticketsClosed" type="number" min="0" value="0" />
+            </div>
+            <div>
+              <label><span class="req">*</span>Tickets escalated</label>
+              <input id="ticketsEscalated" type="number" min="0" value="0" />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="saveBtn" class="btn">Save entry</button>
+            <button id="clearForm" type="button" class="btn ghost">Clear</button>
+            <div class="submeta">Default day length = <strong>8</strong> hrs</div>
+          </div>
+        </form>
+
+      </div>
+
+      <!-- RIGHT: Calendar -->
+      <div class="cal-wrap" id="calWrap">
+        <div class="cal-header">
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="prevMonth" class="btn ghost">‹</button>
+            <div style="font-weight:800;font-size:16px" id="monthLabel"></div>
+            <button id="nextMonth" class="btn ghost">›</button>
+          </div>
+          <div class="count-badge" id="filledCount">0 filled</div>
+        </div>
+
+        <div class="cal-weekdays">
+          <div class="weekday">Sun</div>
+          <div class="weekday">Mon</div>
+          <div class="weekday">Tue</div>
+          <div class="weekday">Wed</div>
+          <div class="weekday">Thu</div>
+          <div class="weekday">Fri</div>
+          <div class="weekday">Sat</div>
+        </div>
+        <div class="cal-grid" id="calGrid" data-rendered="0"></div>
+        <div style="margin-top:10px;font-size:13px;color:var(--muted)">Click a date to edit that day's entry. Blue =
+          filled, red = empty. H = Holiday, PT = PTO.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ✅ FIXED FIREBASE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
+    import { getFirestore, collection, getDocs, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+    // ========== FIREBASE INIT ==========
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOwKXnOXAw_hl3ZTYjtPnMJG_TiSHm8rY",
+      authDomain: "utilizationtracker.firebaseapp.com",
+      projectId: "utilizationtracker",
+      storageBucket: "utilizationtracker.firebasestorage.app",
+      messagingSenderId: "67928414030",
+      appId: "1:67928414030:web:2cae8e72eeb146820b701f",
+      measurementId: "G-6LE13CNF0K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const STORAGE_COLLECTION = "timesheet_entries";
+    const $ = id => document.getElementById(id);
+
+    // ========== UTILITIES ==========
+    const todayISO = () => {
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      return d.toISOString().slice(0, 10);
+    };
+
+    let currentEngineerName = "";
+
+    function emailToName(email) {
+      const base = email.split("@")[0];
+      return base.split(/[._]/).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ");
+    }
+
+    function getInitials(name) {
+      const parts = name.trim().split(" ");
+      if (parts.length === 1) return parts[0][0].toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function setProfilePhoto(photoURL, displayName) {
+      const el = $("profilePhoto");
+      if (!el) return;
+
+      el.style.backgroundImage = "";
+      el.textContent = getInitials(displayName || "U");
+      el.style.background = "linear-gradient(135deg,#4f46e5,#a855f7)";
+      el.style.color = "#fff";
+
+      if (!photoURL) return;
+
+      const img = new Image();
+      img.onload = () => {
+        el.style.backgroundImage = `url('${photoURL}')`;
+        el.style.backgroundSize = "cover";
+        el.style.backgroundPosition = "center";
+        el.textContent = "";
+      };
+      img.onerror = () => {
+        console.warn("Failed to load profile photo:", photoURL);
+      };
+      img.src = photoURL;
+    }
+
+    // ========== AUTH STATE ==========
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        window.location.href = `/login.html?returnUrl=${encodeURIComponent(location.pathname)}`;
+        return;
+      }
+
+      currentEngineerName = user.displayName?.trim() || emailToName(user.email);
+      $("engineerName").value = currentEngineerName;
+      $("engineerDisplayName").textContent = currentEngineerName;
+
+      // Load manager name
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) {
+          const fsUserDoc = snap.data();
+          $("managerDisplay").value = fsUserDoc.managerName || "No manager assigned";
+          setProfilePhoto(fsUserDoc.photoURL, currentEngineerName);
+        } else {
+          $("managerDisplay").value = "No manager assigned";
+          setProfilePhoto(user.photoURL, currentEngineerName);
+        }
+      } catch {
+        $("managerDisplay").value = "Error loading manager";
+        setProfilePhoto(user.photoURL, currentEngineerName);
+      }
+
+      await renderCalendar();
+      highlightSelectedDate();
+    });
+
+    $("signOutBtn").addEventListener("click", () => {
+      auth.signOut().then(() => (window.location.href = "/login.html"));
+    });
+
+    // ========== NON-BILLABLE ==========
+    function updateNonBillable() {
+      let b = Number($("billable").value || 0);
+      let nb = 8 - (isNaN(b) ? 0 : b);
+      $("nonBillable").value = Math.max(nb, 0).toFixed(2);
+    }
+
+    $("billable").addEventListener("input", updateNonBillable);
+    $("entryDate").value = todayISO();
+    updateNonBillable();
+
+    // ========== LEAVE MODE ==========
+    const isHoliday = $("isHoliday");
+    const isPTO = $("isPTO");
+
+    function applyLeaveMode() {
+      const leave = isHoliday.checked || isPTO.checked;
+
+      // ✅ FIXED: Use consistent .nonbill-tag selector everywhere
+      const fieldsToDisable = ['billable', 'nonBillable', 'ticketsWorked', 'ticketsClosed', 'ticketsEscalated', 'notes'];
+
+      fieldsToDisable.forEach(fieldId => {
+        const field = $(fieldId);
+        if (field) {
+          field.disabled = leave;
+          field.style.opacity = leave ? '0.6' : '1';
+          field.style.pointerEvents = leave ? 'none' : 'auto';
+          if (leave) field.value = '0';
+        }
+      });
+
+      // ✅ FIXED: Consistent selector - .nonbill-tag
+      document.querySelectorAll(".nonbill-tag").forEach(ch => {
+        ch.disabled = leave;
+        ch.closest(".pill").style.opacity = leave ? "0.6" : "1";
+        if (leave) ch.checked = false;
+      });
+
+      if (leave) {
+        $("billable").value = 0;
+        $("nonBillable").value = "0.00";
+        $("ticketsWorked").value = 0;
+        $("ticketsClosed").value = 0;
+        $("ticketsEscalated").value = 0;
+        $("notes").value = '';
+      } else {
+        updateNonBillable();
+      }
+    }
+
+    isHoliday.addEventListener("change", () => {
+      if (isHoliday.checked) isPTO.checked = false;
+      applyLeaveMode();
+    });
+
+    isPTO.addEventListener("change", () => {
+      if (isPTO.checked) isHoliday.checked = false;
+      applyLeaveMode();
+    });
+
+    // ========== CALENDAR & FORM FUNCTIONS ==========
+    async function loadEntries() {
+      const snap = await getDocs(collection(db, STORAGE_COLLECTION));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    let cachedEntries = [];
+    let calYear, calMonth;
+
+    function normalizeDate(raw) {
+      if (!raw) return null;
+      if (raw.toDate) return raw.toDate().toISOString().slice(0, 10);
+      return raw.split("T")[0];
+    }
+
+    function highlightSelectedDate() {
+      const selected = $("entryDate").value;
+      document.querySelectorAll(".cal-day").forEach(day => {
+        day.classList.toggle("selected", day.dataset.date === selected);
+      });
+    }
+
+    function resetForm() {
+      $("isHoliday").checked = false;
+      $("isPTO").checked = false;
+
+      const fieldsToEnable = ['billable', 'nonBillable', 'ticketsWorked', 'ticketsClosed', 'ticketsEscalated', 'notes'];
+      fieldsToEnable.forEach(fieldId => {
+        const field = $(fieldId);
+        if (field) {
+          field.disabled = false;
+          field.style.opacity = '1';
+          field.style.pointerEvents = 'auto';
+          field.style.borderColor = '';
+        }
+      });
+
+      document.querySelectorAll('.nonbill-tag').forEach(checkbox => {
+        checkbox.disabled = false;
+        checkbox.checked = false;
+      });
+
+      $("billable").value = '';
+      $("nonBillable").value = '';
+      $("ticketsWorked").value = '0';
+      $("ticketsClosed").value = '0';
+      $("ticketsEscalated").value = '0';
+      $("notes").value = '';
+
+      document.querySelectorAll('.error-message').forEach(el => el.remove());
+    }
+
+    $("entryDate").addEventListener("change", () => {
+      highlightSelectedDate();
+      resetForm();
+      loadEntryForDate($("entryDate").value);
+    });
+
+    async function loadEntryForDate(dateStr) {
+      try {
+        const docId = `${currentEngineerName.replace(/\s+/g, '_')}|${dateStr}`;
+        const docRef = doc(db, STORAGE_COLLECTION, docId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          $("billable").value = data.billable || '';
+          $("nonBillable").value = data.nonBillable || '';
+          $("ticketsWorked").value = data.ticketsWorked || 0;
+          $("ticketsClosed").value = data.ticketsClosed || 0;
+          $("ticketsEscalated").value = data.ticketsEscalated || 0;
+          $("notes").value = data.comment || '';
+
+          if (data.leaveType === 'Holiday') $("isHoliday").checked = true;
+          if (data.leaveType === 'PTO') $("isPTO").checked = true;
+
+          if (data.leaveType) applyLeaveMode();
+
+          if (Array.isArray(data.nonBillableTags)) {
+            document.querySelectorAll('.nonbill-tag').forEach(checkbox => {
+              checkbox.checked = data.nonBillableTags.includes(checkbox.value);
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading entry:", error);
+      }
+    }
+
+    function handleDateClick(dateStr) {
+      $("entryDate").value = dateStr;
+      resetForm();
+      highlightSelectedDate();
+      loadEntryForDate(dateStr);
+    }
+
+    async function renderCalendar() {
+      cachedEntries = await loadEntries();
+
+      if (calYear == null || calMonth == null) {
+        const now = new Date();
+        calYear = now.getFullYear();
+        calMonth = now.getMonth();
+      }
+
+      const grid = $("calGrid");
+      grid.innerHTML = "";
+
+      const first = new Date(calYear, calMonth, 1);
+      const startDay = first.getDay();
+      const days = new Date(calYear, calMonth + 1, 0).getDate();
+
+      for (let i = 0; i < startDay; i++) {
+        const el = document.createElement("div");
+        el.className = "cal-day empty";
+        grid.appendChild(el);
+      }
+
+      const engName = currentEngineerName.trim();
+      let filled = 0;
+
+      for (let d = 1; d <= days; d++) {
+        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const entry = cachedEntries.find(e => {
+          const ed = normalizeDate(e.date) || e.id.split("|")[1];
+          return e.engineer?.trim() === engName && ed === dateStr;
+        });
+
+        const cell = document.createElement("div");
+        cell.classList.add("cal-day");
+        cell.dataset.date = dateStr;
+
+        if (entry) {
+          if (entry.leaveType === "Holiday") {
+            cell.classList.add("leave-h");
+            cell.textContent = "H";
+          } else if (entry.leaveType === "PTO") {
+            cell.classList.add("leave-pt");
+            cell.textContent = "PT";
+          } else {
+            cell.classList.add("blue");
+            cell.textContent = d;
+          }
+          filled++;
+        } else {
+          cell.classList.add("red");
+          cell.textContent = d;
+        }
+
+        cell.addEventListener("click", () => handleDateClick(dateStr));
+        grid.appendChild(cell);
+      }
+
+      $("filledCount").textContent = `${filled} filled`;
+      $("monthLabel").textContent = first.toLocaleString("default", { month: "long" }) + " " + calYear;
+      highlightSelectedDate();
+    }
+
+    $("prevMonth").addEventListener("click", () => {
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    });
+
+    $("nextMonth").addEventListener("click", () => {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCalendar();
+    });
+
+    // ========== VALIDATION HELPERS ==========
+    function showError(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.style.background = "#ef4444";
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 3000);
+    }
+
+    function showFieldError(fieldId, message) {
+      const field = $(fieldId);
+      let errorElement = field.nextElementSibling;
+
+      if (!errorElement || !errorElement.classList.contains('error-message')) {
+        errorElement = document.createElement('div');
+        errorElement.className = 'error-message';
+        errorElement.style.cssText = 'color:#ef4444;font-size:12px;margin-top:4px;';
+        field.parentNode.insertBefore(errorElement, field.nextSibling);
+      }
+
+      errorElement.textContent = message;
+      field.style.borderColor = '#ef4444';
+      field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    function clearFieldError(fieldId) {
+      const field = $(fieldId);
+      const errorElement = field.nextElementSibling;
+      if (errorElement && errorElement.classList.contains('error-message')) {
+        errorElement.remove();
+      }
+      field.style.borderColor = '';
+    }
+
+    function validateRequired(fieldId, fieldName) {
+      const field = $(fieldId);
+      if (!field.value.trim()) {
+        showFieldError(fieldId, `${fieldName} is required`);
+        return false;
+      }
+      clearFieldError(fieldId);
+      return true;
+    }
+
+    function validateNumber(fieldId, fieldName, min = 0, max = 24) {
+      const field = $(fieldId);
+      const value = parseFloat(field.value);
+
+      if (!field.value.trim()) {
+        showFieldError(fieldId, `${fieldName} is required`);
+        return false;
+      }
+
+      if (isNaN(value) || value < min || value > max) {
+        showFieldError(fieldId, `${fieldName} must be between ${min} and ${max}`);
+        return false;
+      }
+
+      clearFieldError(fieldId);
+      return true;
+    }
+
+    // ========== ✅ FIXED SAVE ENTRY ==========
+    async function saveEntry() {
+      // Clear previous errors
+      document.querySelectorAll('.error-message').forEach(el => el.remove());
+
+      let isValid = true;
+      const isOnLeave = $("isHoliday").checked || $("isPTO").checked;
+
+      // Always validate date
+      if (!validateRequired('entryDate', 'Date')) isValid = false;
+
+      // Only validate work fields if not on leave
+      if (!isOnLeave) {
+        if (!validateNumber('billable', 'Billable hours', 0, 24)) isValid = false;
+        if (!validateNumber('nonBillable', 'Non-billable hours', 0, 24)) isValid = false;
+        if (!validateNumber('ticketsWorked', 'Tickets worked', 0)) isValid = false;
+        if (!validateNumber('ticketsClosed', 'Tickets closed', 0)) isValid = false;
+        if (!validateNumber('ticketsEscalated', 'Tickets escalated', 0)) isValid = false;
+
+        const notes = $("notes").value.trim();
+        if (!notes) {
+          showFieldError('notes', 'Notes are required');
+          isValid = false;
+        }
+
+        // ✅ FIXED: Collect non-billable tags with correct selector
+        const selectedTags = Array.from(document.querySelectorAll('.nonbill-tag:checked')).map(tag => tag.value);
+        if (selectedTags.length === 0) {
+          const tagsContainer = $('nonBillableTags');
+          let errorEl = tagsContainer.parentElement.querySelector('.error-message');
+          if (!errorEl) {
+            errorEl = document.createElement('div');
+            errorEl.className = 'error-message';
+            errorEl.style.cssText = 'color:#ef4444;font-size:12px;margin-top:4px;';
+            errorEl.textContent = 'Please select at least one non-billable tag';
+            tagsContainer.parentNode.insertBefore(errorEl, tagsContainer.nextSibling);
+          }
+          isValid = false;
+        }
+      }
+
+      if (!isValid) return;
+
+      // ✅ FIXED: Properly capture ALL form data
+      const selectedTags = Array.from(document.querySelectorAll('.nonbill-tag:checked')).map(tag => tag.value);
+      const currentUser = auth.currentUser;
+      const entry = {
+        date: $("entryDate").value,
+        engineer: currentEngineerName,
+        engineerUid: currentUser ? currentUser.uid : null,
+        engineerEmail: currentUser ? currentUser.email : null,
+        billable: parseFloat($("billable").value) || 0,
+        nonBillable: parseFloat($("nonBillable").value) || 0,
+        ticketsWorked: parseInt($("ticketsWorked").value) || 0,
+        ticketsClosed: parseInt($("ticketsClosed").value) || 0,
+        ticketsEscalated: parseInt($("ticketsEscalated").value) || 0,
+        comment: $("notes").value.trim(),  // ✅ FIXED: Now captures notes correctly
+        nonBillableTags: selectedTags,
+        leaveType: $("isHoliday").checked ? 'Holiday' : ($("isPTO").checked ? 'PTO' : ''),
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        const docId = `${currentEngineerName.replace(/\s+/g, '_')}|${entry.date}`;
+        await setDoc(doc(db, STORAGE_COLLECTION, docId), entry);
+
+        // Success
+        const toast = $("toast");
+        toast.textContent = "Entry saved successfully!";
+        toast.style.background = "#22c55e";
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 3000);
+
+        await renderCalendar();
+      } catch (error) {
+        console.error("Error saving entry:", error);
+        showError("Error saving entry. Please try again.");
+      }
+    }
+
+    // Event listeners
+    $("saveBtn").addEventListener("click", saveEntry);
+    $("entryForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await saveEntry();
+    });
+
+    // Clear form button
+    $("clearForm").addEventListener("click", resetForm);
+
+    // ========== INIT ==========
+    (async function init() {
+      $("entryDate").value = todayISO();
+      await renderCalendar();
+      highlightSelectedDate();
+    })();
+  </script>
+
+</body>
+
+</html>

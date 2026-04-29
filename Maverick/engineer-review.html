@@ -1,0 +1,904 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Engineer Review — Utilization Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="css/manager-common.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f3f7fb;
+      --card: #fff;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-2: #1e3a8a;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --green: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Inter, system-ui, Segoe UI, Roboto, Arial
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #0f172a
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh
+    }
+
+    .sidebar {
+      width: 240px;
+      background: #fff;
+      padding: 28px 18px;
+      border-right: 1px solid rgba(0, 0, 0, .05);
+      display: flex;
+      flex-direction: column
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .ico {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700
+    }
+
+    .nav {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .nav a {
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--muted);
+      text-decoration: none
+    }
+
+    .nav a.active {
+      background: #eef6ff;
+      color: var(--accent);
+      font-weight: 600
+    }
+
+    .nav a:hover {
+      background: #f8fafc;
+      color: var(--accent)
+    }
+
+    .user {
+      margin-top: auto;
+      padding-top: 18px;
+      border-top: 1px solid rgba(0, 0, 0, .04)
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .user-menu {
+      position: absolute;
+      top: 22px;
+      right: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      z-index: 100;
+      min-width: 120px
+    }
+
+    .user-menu-top {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .signout {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid #fee2e2;
+      color: #b91c1c;
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      width: 100%;
+      text-align: center
+    }
+
+    .signout:hover {
+      background: #fee2e2
+    }
+
+    .main {
+      flex: 1;
+      padding: 22px;
+      overflow-x: auto;
+      position: relative
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-right: 140px
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;
+      color: #0f172a
+    }
+
+    .title .subtitle {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 14px
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .select,
+    .btn {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, .06);
+      background: var(--card);
+      font-size: 14px
+    }
+
+    .btn {
+      background: linear-gradient(90deg, var(--accent), #4f46e5);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 600
+    }
+
+    .btn:hover {
+      opacity: 0.9
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid rgba(0, 0, 0, .1);
+      color: var(--accent);
+      font-weight: 600
+    }
+
+    .btn.ghost:hover {
+      background: #f8fafc
+    }
+
+    .card-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px
+    }
+
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(12, 18, 30, 0.04);
+      display: flex;
+      flex-direction: column
+    }
+
+    .card h3 {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px
+    }
+
+    .card .val {
+      font-size: 28px;
+      font-weight: 700;
+      margin-top: 8px;
+      color: #0f172a
+    }
+
+    .card p {
+      margin: 6px 0 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f172a
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+      margin-bottom: 20px
+    }
+
+    .panel {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(12, 18, 30, 0.04)
+    }
+
+    .panel h4 {
+      margin: 0 0 16px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a
+    }
+
+    .panel h4+hr {
+      margin-top: 12px;
+      margin-bottom: 16px;
+      border: none;
+      border-top: 1px solid #eef2f6
+    }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+      margin-top: 12px
+    }
+
+    .chart-container canvas {
+      max-height: 100%
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 12px
+    }
+
+    thead {
+      background: #f8fafc
+    }
+
+    th,
+    td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eef2f6
+    }
+
+    th {
+      font-weight: 700;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px
+    }
+
+    td {
+      color: #0f172a
+    }
+
+    tbody tr:hover {
+      background: #f8fafc
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px
+    }
+
+    .muted {
+      color: var(--muted)
+    }
+
+    .no-data {
+      text-align: center;
+      color: var(--muted);
+      padding: 18px;
+      font-size: 14px
+    }
+
+    #quickStats {
+      line-height: 1.8
+    }
+
+    #recentNotes {
+      max-height: 240px;
+      overflow: auto
+    }
+
+    #recentNotes>div {
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #eef2f6;
+      background: #f8fafc
+    }
+
+    #recentNotes>div:last-child {
+      margin-bottom: 0
+    }
+
+    @media(max-width:1200px) {
+      .card-row {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+
+    @media(max-width:980px) {
+      .panels {
+        grid-template-columns: 1fr
+      }
+
+      .card-row {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+
+    @media(max-width:640px) {
+      .sidebar {
+        display: none
+      }
+
+      .main {
+        padding: 12px
+      }
+
+      .card-row {
+        grid-template-columns: 1fr
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-right: 110px
+      }
+
+      .user-menu {
+        top: 12px;
+        right: 12px;
+        min-width: 100px
+      }
+    }
+  </style>
+<script>if(window.self !== window.top) { document.write('<style>.sidebar{display:none !important;} .app{flex-direction:column;} .main{margin-left:0 !important; padding:15px !important;}</style>'); }</script></head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="favicon.png" style="width:44px; height:44px; border-radius:10px; object-fit:contain;">
+        <div>
+          <div style="font-weight:700">Performance</div>
+          <div style="color:var(--muted);font-size:13px">Tracker</div>
+        </div>
+      </div>
+<nav class="nav">
+        <a href="updated.html"><i>📊</i> Dashboard</a>
+        <a href="teammembers.html" class="active"><i>👥</i> Team Members</a>
+        <a href="reports.html"><i>📈</i> Team Performance</a>
+		<a href="attendance.html"><i>📅</i> Attendance</a>
+        <a href="clientreporting.html"><i>🏢</i> Client Wise Reporting</a>
+        <a href="attrition.html"><i>📉</i> Attrition</a>
+        <a href="billing.html"><i>💰</i> Billing</a>
+        <a href="levelups.html"><i>🎯</i> Level Ups</a>
+      </nav>
+      <div class="user">
+        <div class="user-info">
+          <div id="userAvatar"
+            style="width:40px;height:40px;border-radius:999px;background:#e6eefc;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700">
+            U</div>
+          <div>
+            <div id="userName" style="font-weight:600;font-size:15px">User</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="user-menu">
+        <div class="user-menu-top">
+          <div id="headerUserAvatar"
+            style="width:36px;height:36px;border-radius:50%;background:#e6eefc;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:14px">
+            U</div>
+          <div id="headerUserName" style="font-weight:600;font-size:14px;color:#0f172a;text-align:right">User</div>
+        </div>
+        <button class="signout" id="signOut">Sign Out</button>
+      </div>
+      <div class="header">
+        <div class="title">
+          <h1>Engineer Review</h1>
+          <div class="subtitle">Detailed performance analysis for individual engineers.</div>
+        </div>
+        <div class="controls">
+          <label style="color:var(--muted);font-size:14px">Engineer:</label>
+          <select id="engineerSelect" class="select">
+            <option value="">-- Select engineer --</option>
+          </select>
+          <select id="periodSelect" class="select" title="Select timeframe">
+            <option value="7">Last 7 days</option>
+            <option value="30">This month</option>
+            <option value="90">Last 3 months</option>
+            <option value="custom">Custom range</option>
+          </select>
+          <input id="fromDate" type="date" class="select" style="display:none" />
+          <input id="toDate" type="date" class="select" style="display:none" />
+          <button id="refreshBtn" class="btn ghost">⟳ Refresh</button>
+          <button id="exportCsv" class="btn">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="card-row">
+        <div class="card">
+          <h3>Avg Utilization</h3>
+          <p id="kpiUtil">—</p>
+        </div>
+		
+        <div class="card">
+          <h3>Resolution Rate</h3>
+          <p id="kpiResolution">—</p>
+        </div>
+		
+		 <div class="card">
+          <h3>Total Billable Hrs</h3>
+          <p id="kpiBill">—</p>
+        </div>
+		
+        <div class="card">
+          <h3>Missing Sheets</h3>
+          <p id="kpiMissing">—</p>
+        </div>
+        
+        <div class="card">
+          <h3>Total Non-Billable</h3>
+          <p id="kpiNonBillable">—</p>
+        </div>
+        
+        <div class="card">
+          <h3>Tickets Worked</h3>
+          <p id="kpiTicketsWorked">—</p>
+        </div>
+        
+        <div class="card">
+          <h3>Tickets Closed</h3>
+          <p id="kpiTicketsClosed">—</p>
+        </div>
+      </div>
+	  
+	 
+
+      <div class="panels">
+        <div class="panel">
+          <h4>Trend — Billable Hours</h4>
+          <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+          </div>
+
+          <div style="margin-top:20px">
+            <h4>Daily Breakdown</h4>
+            <table id="dailyTbl">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Billable</th>
+                  <th>Non-billable</th>
+                  <th>Tags</th>
+                  <th>Notes</th>
+                  <th>Tickets Worked</th>
+                  <th>Tickets Closed</th>
+                  <th>PTO/Holiday</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h4>Quick Stats</h4>
+          <div id="quickStats"></div>
+          <hr>
+          <h4>Recent Notes</h4>
+          <div id="recentNotes"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+    // same firebase config as other pages
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOwKXnOXAw_hl3ZTYjtPnMJG_TiSHm8rY",
+      authDomain: "utilizationtracker.firebaseapp.com",
+      projectId: "utilizationtracker",
+      storageBucket: "utilizationtracker.firebasestorage.app",
+      messagingSenderId: "67928414030",
+      appId: "1:67928414030:web:2cae8e72eeb146820b701f",
+      measurementId: "G-6LE13CNF0K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const $ = id => document.getElementById(id);
+
+    // require sign-in
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login.html?returnUrl=${returnUrl}`;
+      } else {
+        // Load user profile
+        try {
+          const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js");
+          const userRef = doc(db, 'users', user.uid);
+          const snap = await getDoc(userRef);
+          const profile = snap.exists() ? snap.data() : {};
+
+          let displayName = profile.name || user.displayName || '';
+          if (!displayName && user.email) {
+            const local = user.email.split('@')[0].replace(/[._]/g, ' ');
+            displayName = local.split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+          }
+
+          const initials = displayName ? displayName.split(' ').map(x => x[0] || '').slice(0, 2).join('').toUpperCase() : 'U';
+          $('userName').textContent = displayName || 'User';
+          $('headerUserName').textContent = displayName || 'User';
+          $('userAvatar').textContent = initials;
+          $('headerUserAvatar').textContent = initials;
+        } catch (err) {
+          console.error('Error loading user profile:', err);
+        }
+
+        init();
+      }
+    });
+
+    // helpers
+    const STORAGE_COLLECTION = 'timesheet_entries';
+    let cachedEntries = [];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const preEngineer = urlParams.get('engineer'); // allow linking
+
+    function todayISO() { return new Date().toISOString().slice(0, 10); }
+    function addDays(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); }
+    function parseDate(s) { return s ? new Date(s) : null; }
+    function formatDate(s) { if (!s) return ''; return (new Date(s)).toISOString().slice(0, 10); }
+
+    // load all entries once (manager view - read-only)
+    async function loadAllEntries() {
+      const col = collection(db, STORAGE_COLLECTION);
+      const snap = await getDocs(col);
+      cachedEntries = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    }
+
+    // build engineer list
+    function populateEngineers() {
+      const set = new Set(cachedEntries.map(e => (e.engineer || '').trim()).filter(Boolean));
+      const sel = $('engineerSelect');
+      sel.innerHTML = '<option value=\"\">-- Select engineer --</option>' + Array.from(set).sort().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+      if (preEngineer) {
+        const found = Array.from(set).find(x => x === preEngineer);
+        if (found) sel.value = preEngineer;
+      }
+    }
+
+    function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    // compute timeframe based on UI
+    function getTimeRange() {
+      const period = $('periodSelect').value;
+      if (period === 'custom') {
+        const from = $('fromDate').value;
+        const to = $('toDate').value;
+        return { from: from || null, to: to || null };
+      }
+      const days = Number(period);
+      const end = todayISO();
+      const start = addDays(end, - (days - 1));
+      return { from: start, to: end };
+    }
+
+    // filter entries for selected engineer + range
+    function entriesForEngineer(eng, range) {
+      const from = range.from ? new Date(range.from + 'T00:00:00') : null;
+      const to = range.to ? new Date(range.to + 'T23:59:59') : null;
+      return cachedEntries.filter(e => {
+        const name = (e.engineer || '').trim();
+        if (name !== eng) return false;
+        const dStr = e.date || (e.id && String(e.id).split('|')[1]) || null;
+        if (!dStr) return false;
+        const d = new Date(dStr + 'T12:00:00');
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      }).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    }
+
+    // compute KPIs & render UI
+    let trendChart;
+    function computeAndRenderForEngineer(name) {
+      if (!name) {
+        $('kpiUtil').textContent = '—';
+        $('kpiBill').textContent = '—';
+        $('kpiResolution').textContent = '—';
+        $('kpiMissing').textContent = '—';
+        $('kpiNonBillable').textContent = '—';
+        $('kpiTicketsWorked').textContent = '—';
+        $('kpiTicketsClosed').textContent = '—';
+        $('dailyTbl tbody').innerHTML = '';
+        $('quickStats').innerHTML = '';
+        $('recentNotes').innerHTML = '';
+        if (trendChart) { trendChart.destroy(); trendChart = null; }
+        return;
+      }
+      const range = getTimeRange();
+      const list = entriesForEngineer(name, range);
+
+      // Totals and breakdown
+      let totalBill = 0, totalClosed = 0, totalWorked = 0, daysCount = 0;
+      const dayMap = new Map(); // date -> aggregated
+      list.forEach(e => {
+        const d = e.date || (e.id && String(e.id).split('|')[1]);
+        if (!d) return;
+        if (!dayMap.has(d)) dayMap.set(d, { billable: 0, nonBillable: 0, tags: [], notes: [] });
+        const rec = dayMap.get(d);
+        rec.billable += Number(e.billable || 0);
+        rec.nonBillable += Number(e.nonBillable || 0);
+        if (Array.isArray(e.nonBillableTags)) rec.tags.push(...e.nonBillableTags);
+        if (e.comment) rec.notes.push(e.comment);
+      });
+
+      daysCount = dayMap.size;
+      Array.from(dayMap.values()).forEach(v => { totalBill += v.billable; });
+
+      list.forEach(e => {
+        totalClosed += Number(e.ticketsClosed || 0);
+        totalWorked += Number(e.ticketsWorked || 0);
+      });
+
+      const resolutionRate = totalWorked > 0 ? Math.round((totalClosed / totalWorked) * 100) : 0;
+
+      // avg util per day = avg(billable / 8)
+      const avgUtil = daysCount ? Math.round((Array.from(dayMap.values()).reduce((s, v) => s + (v.billable / (8 || 1)), 0) / daysCount) * 100) : 0;
+
+      // missing sheets heuristic: expected workdays in range minus days with entry (assume 5-day workweek)
+      const fromD = range.from ? new Date(range.from + 'T00:00:00') : null;
+      const toD = range.to ? new Date(range.to + 'T00:00:00') : null;
+      let expected = 0;
+      if (fromD && toD) {
+        const cur = new Date(fromD);
+        while (cur <= toD) {
+          const dow = cur.getDay();
+          if (dow !== 0 && dow !== 6) expected++;
+          cur.setDate(cur.getDate() + 1);
+        }
+      } else {
+        expected = Math.max(0, daysCount); // fallback
+      }
+      const missing = Math.max(0, expected - daysCount);
+
+      // Calculate total non-billable hours
+      let totalNonBillable = 0;
+      Array.from(dayMap.values()).forEach(v => { totalNonBillable += v.nonBillable; });
+
+      // render KPIs
+      $('kpiUtil').textContent = avgUtil + '%';
+      $('kpiBill').textContent = totalBill.toFixed(1) + 'h';
+      $('kpiResolution').textContent = resolutionRate + '%';
+      $('kpiMissing').textContent = missing;
+      $('kpiNonBillable').textContent = totalNonBillable.toFixed(1) + 'h';
+      $('kpiTicketsWorked').textContent = totalWorked;
+      $('kpiTicketsClosed').textContent = totalClosed;
+
+      // Trend chart (daily billable)
+      const labels = Array.from(dayMap.keys()).sort();
+      const data = labels.map(d => Number((dayMap.get(d).billable || 0).toFixed(2)));
+      const ctx = $('trendChart').getContext('2d');
+      if (trendChart) trendChart.destroy();
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Billable hrs',
+            data,
+            fill: true,
+            tension: 0.3,
+            backgroundColor: 'rgba(37,99,235,0.08)',
+            borderColor: 'rgba(37,99,235,0.9)',
+            pointRadius: 4,
+            pointBackgroundColor: 'rgba(37,99,235,1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+
+      // daily table
+      const tbody = document.querySelector('#dailyTbl tbody');
+      if (labels.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="no-data" style="text-align:center;padding:40px">No data available for selected period</td></tr>';
+      } else {
+        tbody.innerHTML = labels.map(d => {
+          const day = dayMap.get(d);
+          const dateStr = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const notes = (day.notes || []).map(n => n.replace(/[\r\n]+/g, ' ').trim());
+          // Find the entry for this date to get tickets worked/closed
+          const entry = list.find(e => e.date === d) || {};
+          const leaveType = entry.leaveType || '';
+          return `
+            <tr>
+              <td>${dateStr}</td>
+              <td>${day.billable.toFixed(1)}h</td>
+              <td>${day.nonBillable.toFixed(1)}h</td>
+              <td>${(day.tags || []).join(', ')}</td>
+              <td>${notes.join('; ')}</td>
+              <td>${entry.ticketsWorked || '0'}</td>
+              <td>${entry.ticketsClosed || '0'}</td>
+              <td>${leaveType}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // quick stats (top non-bill tags)
+      const tagCounts = {};
+      Array.from(dayMap.values()).forEach(v => v.tags.forEach(t => tagCounts[t] = (tagCounts[t] || 0) + 1));
+      const tagList = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]).slice(0, 8);
+      if (tagList.length === 0) {
+        $('quickStats').innerHTML = `
+          <div style="margin-bottom:12px"><strong style="color:#0f172a">Days in period:</strong> <span style="color:var(--accent);font-weight:600">${daysCount}</span></div>
+          <div class="muted" style="margin-top:12px">No activity tags recorded</div>
+        `;
+      } else {
+        $('quickStats').innerHTML = `
+          <div style="margin-bottom:16px"><strong style="color:#0f172a">Days in period:</strong> <span style="color:var(--accent);font-weight:600">${daysCount}</span></div>
+          <div style="margin-top:12px"><strong style="color:#0f172a;display:block;margin-bottom:8px">Top non-billable tags:</strong>${tagList.map(t => `<div style="margin:8px 0;padding:8px;background:#f8fafc;border-radius:6px;display:flex;justify-content:space-between"><span>${escapeHtml(t)}</span><span style="color:var(--accent);font-weight:600">${tagCounts[t]}</span></div>`).join('')}</div>
+        `;
+      }
+
+      // recent notes
+      const notesList = [];
+      Array.from(dayMap.entries()).reverse().forEach(([d, rec]) => {
+        rec.notes.forEach(n => notesList.push({ date: d, note: n }));
+      });
+      if (notesList.length === 0) {
+        $('recentNotes').innerHTML = '<div class="muted" style="text-align:center;padding:20px">No notes available</div>';
+      } else {
+        $('recentNotes').innerHTML = notesList.slice(0, 8).map(n => `
+          <div>
+            <div style="font-weight:700;color:#0f172a;font-size:13px">${n.date}</div>
+            <div style="margin-top:6px;color:var(--muted);font-size:14px;line-height:1.5">${escapeHtml(n.note)}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // CSV export of visible daily table
+    function exportCSV() {
+      const rows = document.querySelectorAll('#dailyTbl tbody tr');
+      if (!rows.length) { alert('No rows to export'); return; }
+      let csv = 'Date,Billable,NonBillable,Tags,Notes,Tickets Worked,Tickets Closed,PTO/Holiday\n';
+      rows.forEach(r => {
+        const date = (r.cells[0].textContent || '').trim();
+        const billable = (r.cells[1].textContent || '').trim();
+        const nonBillable = (r.cells[2].textContent || '').trim();
+        const tags = (r.cells[3].textContent || '').trim();
+        const notes = (r.cells[4].textContent || '').replace(/"/g, '""');
+        const ticketsWorked = (r.cells[5]?.textContent || '0').trim();
+        const ticketsClosed = (r.cells[6]?.textContent || '0').trim();
+        const leaveType = (r.cells[7]?.textContent || '').trim();
+        csv += `"${date}","${billable}","${nonBillable}","${tags}","${notes}","${ticketsWorked}","${ticketsClosed}","${leaveType}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'engineer_report.csv'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // wiring
+    $('periodSelect').addEventListener('change', () => {
+      const v = $('periodSelect').value;
+      if (v === 'custom') { $('fromDate').style.display = ''; $('toDate').style.display = ''; }
+      else { $('fromDate').style.display = 'none'; $('toDate').style.display = 'none'; }
+    });
+
+    $('refreshBtn').addEventListener('click', async () => {
+      await refreshAndRender();
+    });
+    $('exportCsv').addEventListener('click', exportCSV);
+    $('engineerSelect').addEventListener('change', () => {
+      computeAndRenderForEngineer($('engineerSelect').value);
+    });
+    $('fromDate').addEventListener('change', () => computeAndRenderForEngineer($('engineerSelect').value));
+    $('toDate').addEventListener('change', () => computeAndRenderForEngineer($('engineerSelect').value));
+
+    $('signOut').addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+        window.location.href = '/login.html';
+      } catch (err) {
+        console.error('Sign out failed:', err);
+        alert('Could not sign out: ' + (err.message || err));
+      }
+    });
+
+    async function refreshAndRender() {
+      await loadAllEntries();
+      populateEngineers();
+      const sel = $('engineerSelect');
+      if (!sel.value && preEngineer) sel.value = preEngineer;
+      computeAndRenderForEngineer(sel.value);
+    }
+
+    async function init() {
+      // default period to Last 7 days
+      const now = new Date();
+      $('periodSelect').value = '7';
+      $('fromDate').value = addDays(todayISO(), -6);
+      $('toDate').value = todayISO();
+
+      await refreshAndRender();
+    }
+
+  </script>
+</body>
+
+</html>

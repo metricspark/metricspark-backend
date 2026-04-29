@@ -1,0 +1,604 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Team Members — Performance Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="css/manager-common.css">
+  <style>
+    :root{
+      --bg:#f3f7fb; --card:#fff; --muted:#6b7280; --accent:#2563eb;
+      --accent-2:#1e3a8a; --red:#ef4444; --amber:#f59e0b; --green:#10b981;
+      --initials-colors: #2563eb, #3b82f6, #60a5fa, #f59e0b, #ef4444, #10b981, #8b5cf6, #ec4899;
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;background:var(--bg);color:#0f172a}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:240px;background:#fff;padding:28px 18px;border-right:1px solid rgba(0,0,0,.05);display:flex;flex-direction:column}
+    .logo{display:flex;align-items:center;gap:12px}
+    .ico{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+    .nav a{padding:12px;border-radius:10px;color:var(--muted);text-decoration:none}
+    .nav a.active{background:#eef6ff;color:var(--accent);font-weight:600}
+    .nav a:hover{background:#f8fafc;color:var(--accent)}
+    .filterTitle{margin-top:18px;font-weight:700;color:#0f172a;font-size:14px}
+    .filters{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+    .filterRow{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+    .filterRow input[type="checkbox"]{width:16px;height:16px;cursor:pointer}
+    .filterRow:hover{color:var(--accent)}
+    .filterHint{margin-top:10px;color:var(--muted);font-size:13px;line-height:1.5}
+    .user{margin-top:auto;padding-top:18px;border-top:1px solid rgba(0,0,0,.04)}
+    .user-info{display:flex;align-items:center;gap:12px}
+    .user-menu{position:absolute;top:22px;right:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:100;min-width:120px}
+    .user-menu-top{display:flex;align-items:center;gap:10px}
+    .signout{padding:6px 14px;border-radius:6px;border:1px solid #fee2e2;color:#b91c1c;background:#fff;cursor:pointer;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.2s ease;white-space:nowrap;width:100%;text-align:center}
+    .signout:hover{background:#fee2e2}
+    .main{flex:1;padding:22px;overflow-x:auto;position:relative}
+    .header{margin-bottom:20px;padding-right:140px}
+    .pageInner{max-width:1180px}
+    .header{margin-bottom:20px}
+    h1{margin:0;font-size:26px;font-weight:700;color:#0f172a}
+    .subtitle{color:var(--muted);margin-top:4px;font-size:14px}
+    .controls{display:flex;gap:12px;align-items:center;margin:18px 0;flex-wrap:wrap}
+    .search{flex:1;min-width:200px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:#fff;font-size:14px}
+    .search:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:white;cursor:pointer;font-size:14px;font-weight:600;transition:background-color 0.2s ease}
+    .btn:hover{background:var(--accent-2); border-color:var(--accent-2)}
+
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}
+    @media (max-width:1100px){ .grid{grid-template-columns:repeat(2,1fr);} }
+    @media (max-width:700px){ .grid{grid-template-columns:repeat(1,1fr);} .sidebar{display:none} .main{padding:12px} .header{padding-right:110px} .user-menu{top:12px;right:12px;min-width:100px} }
+
+    .card{
+      background:var(--card);padding:16px;border-radius:14px;box-shadow:0 6px 18px rgba(12,18,30,0.04);
+      display:flex;gap:14px;align-items:center;cursor:pointer;transition:all 0.2s;
+    }
+    .card:hover{box-shadow:0 8px 24px rgba(12,18,30,0.08);transform:translateY(-2px)}
+    /* initials avatar */
+    .avatar{
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    /* meta is now a row: left = info column, right = lastLine */
+    .meta{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .meta .info{display:flex;flex-direction:column;min-width:0;flex:1}
+    .meta h3{margin:0;font-size:16px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .meta p{margin:4px 0 0;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    /* last date: aligned right */
+    .lastLine{margin-left:12px;color:var(--muted);font-weight:600;white-space:nowrap;font-size:13px}
+    .no-data{text-align:center;color:var(--muted);padding:40px;font-size:14px;grid-column:1/-1}
+
+    /* small responsive tweak for long names */
+    .meta h3, .meta p { word-break:break-word; }
+
+    /* when screen is very narrow, stack the last line below the info */
+    @media (max-width:420px){
+      .meta{flex-direction:column;align-items:flex-start}
+      .lastLine{margin-left:0;margin-top:8px}
+    }
+  </style>
+<script>if(window.self !== window.top) { document.write('<style>.sidebar{display:none !important;} .app{flex-direction:column;} .main{margin-left:0 !important; padding:15px !important;}</style>'); }</script></head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="favicon.png" style="width:44px; height:44px; border-radius:10px; object-fit:contain;">
+        <div><div style="font-weight:700">Performance</div><div style="color:var(--muted);font-size:13px">Tracker</div></div>
+      </div>
+
+<nav class="nav">
+        <a href="updated.html"><i>📊</i> Dashboard</a>
+        <a href="teammembers.html" class="active"><i>👥</i> Team Members</a>
+        <a href="reports.html"><i>📈</i> Team Performance</a>
+		<a href="attendance.html"><i>📅</i> Attendance</a>
+        <a href="clientreporting.html"><i>🏢</i> Client Wise Reporting</a>
+        <a href="attrition.html"><i>📉</i> Attrition</a>
+        <a href="billing.html"><i>💰</i> Billing</a>
+        <a href="levelups.html"><i>🎯</i> Level Ups</a>
+      </nav>
+
+      <div class="filterTitle">Client Filters</div>
+      <div class="filters" id="clientFilters">
+        <label class="filterRow"><input type="checkbox" id="filterAllClients" checked /> <span>All Clients</span></label>
+        <!-- client checkboxes inserted here -->
+      </div>
+      <div class="filterHint">Select client to filter team.</div>
+
+      <div class="user">
+        <div class="user-info">
+          <div id="userAvatar" style="width:40px;height:40px;border-radius:999px;background:#e6eefc;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700">U</div>
+          <div><div id="userName" style="font-weight:600;font-size:15px">User</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-top">
+          <div id="headerUserAvatar" class="user-avatar">U</div>
+          <div id="headerUserName" class="user-name">User</div>
+        </div>
+        <button class="signout" id="signOut">Sign Out</button>
+      </div>
+      <div class="pageInner">
+        <div class="header">
+          <h1>Team Members</h1>
+          <div class="subtitle">Select an engineer to view their detailed data.</div>
+        </div>
+
+        <div class="controls">
+          <input id="search" class="search" placeholder="Search team members..." />
+          <button id="refresh" class="btn">⟳ Refresh</button>
+        </div>
+
+        <div id="list" class="grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js';
+    import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOwKXnOXAw_hl3ZTYjtPnMJG_TiSHm8rY",
+      authDomain: "utilizationtracker.firebaseapp.com",
+      projectId: "utilizationtracker",
+      storageBucket: "utilizationtracker.firebasestorage.app",
+      messagingSenderId: "67928414030",
+      appId: "1:67928414030:web:2cae8e72eeb146820b701f",
+      measurementId: "G-6LE13CNF0K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const listEl = document.getElementById('list');
+    const searchEl = document.getElementById('search');
+    const refreshBtn = document.getElementById('refresh');
+    const signOutBtn = document.getElementById('signOut');
+    const userAvatarEl = document.getElementById('userAvatar');
+    const userNameEl = document.getElementById('userName');
+
+    signOutBtn.addEventListener('click', async () => {
+      try{
+        await signOut(auth);
+        window.location.href = 'login.html';
+      }catch(e){
+        console.error('Sign out failed', e);
+        alert('Could not sign out: ' + (e.message || e));
+      }
+    });
+
+    refreshBtn.addEventListener('click', loadMembers);
+    searchEl.addEventListener('input', ()=> {
+      const selectedClient = getSelectedClient();
+      console.log('Rendering cards with client filter:', selectedClient);
+      console.log('Available clients:', [...new Set(currentMembers.map(m => m.client).filter(Boolean))]);
+      renderCards(currentMembers, searchEl.value.trim(), selectedClient);
+    });
+
+    // Client filter event listeners
+    const filterAllClientsEl = document.getElementById('filterAllClients');
+    const clientFiltersEl = document.getElementById('clientFilters');
+
+    // --- PATCHED listeners: remove manager references and call renderCards with client only ---
+    filterAllClientsEl.addEventListener('change', () => {
+      if(filterAllClientsEl.checked){
+        document.querySelectorAll('.clientFilter').forEach(ch => ch.checked = false);
+      }
+      renderCards(currentMembers, searchEl.value.trim(), getSelectedClient());
+    });
+
+    clientFiltersEl.addEventListener('change', (e) => {
+      const any = Array.from(document.querySelectorAll('.clientFilter')).some(ch => ch.checked);
+      if(any) filterAllClientsEl.checked = false;
+      else filterAllClientsEl.checked = true;
+      renderCards(currentMembers, searchEl.value.trim(), getSelectedClient());
+    });
+
+    // getSelectedClient now returns 'All' or an array of selected client names
+    function getSelectedClient(){
+      if(filterAllClientsEl.checked) return 'All';
+      const checked = Array.from(document.querySelectorAll('.clientFilter')).filter(c=>c.checked).map(c=>c.value);
+      if(checked.length === 0) return 'All';
+      return checked;
+    }
+
+    let currentMembers = [];
+    let usersMapByName = {}; // name -> user data
+    let usersMapByUid = {};  // uid -> user data
+
+  // Parse a Firestore date field safely as a local date (no timezone shift)
+  function toLocalDate(value){
+    if(!value) return null;
+    if(typeof value === 'object' && typeof value.toDate === 'function'){
+      return value.toDate();
+    }
+    if(typeof value === 'string'){
+      // Treat YYYY-MM-DD as a date-only value (avoid UTC shift)
+      const iso = value.length === 10 ? `${value}T00:00:00` : value;
+      return new Date(iso);
+    }
+    return new Date(value);
+  }
+
+  function formatDate(date){
+    return date ? date.toLocaleDateString() : '-';
+  }
+
+    onAuthStateChanged(auth, async user => {
+      if(!user){ window.location.href = 'login.html'; return; }
+
+      const userRef = doc(db,'users',user.uid);
+      const snap = await getDoc(userRef);
+      const profile = snap.exists() ? snap.data() : {};
+      const role = (profile.role||'').toLowerCase();
+
+      if(role !== 'manager'){
+        alert('Access denied: manager only');
+        try{ await signOut(auth); }catch(e){}
+        window.location.href = 'login.html';
+        return;
+      }
+
+      let displayName = profile.name || profile.displayName || user.displayName || '';
+      if(!displayName && user.email){
+        const local = user.email.split('@')[0].replace(/[._]/g,' ');
+        displayName = local.split(' ').map(p=> p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
+      }
+      const initials = displayName ? displayName.split(' ').map(x=>x[0]||'').slice(0,2).join('').toUpperCase() : 'U';
+      userNameEl.textContent = displayName || 'User';
+      document.getElementById('headerUserName').textContent = displayName || 'User';
+      userAvatarEl.textContent = initials;
+      document.getElementById('headerUserAvatar').textContent = initials;
+
+      console.log('Loading users from Firestore...');
+      await loadUsers();
+      await loadMembers();
+    });
+
+    // ------------------ PATCHED FUNCTIONS ------------------
+
+    async function loadUsers(){
+      console.log('Loading users from Firestore...');
+      usersMapByName = {};
+      usersMapByUid = {};
+      const clientsSet = new Set();
+      try{
+        const snaps = await getDocs(collection(db,'users'));
+        console.log(`Found ${snaps.size} users in Firestore`);
+        
+        snaps.forEach(s=>{
+          const data = s.data() || {};
+          const uid = s.id;
+          // use either name or displayName as canonical key
+          const nameKey = (data.name || data.displayName || '').trim();
+
+          console.log(`Processing user: ${nameKey || uid}`, {
+            uid,
+            client: data.client,
+            rawData: data
+          });
+          
+          if(nameKey) {
+            usersMapByName[nameKey] = { uid, ...data };
+            // also store by displayName variant possibly
+          }
+          
+          usersMapByUid[uid] = { uid, ...data };
+          
+          // Collect unique clients
+          if(data.client && String(data.client).trim()) {
+            const clientName = String(data.client).trim();
+            console.log(`Found client for ${nameKey || uid}: ${clientName}`);
+            clientsSet.add(clientName);
+          }
+        });
+        // Build client filters (preserve "All Clients" checkbox at top)
+        buildClientFilters(Array.from(clientsSet).sort());
+      }catch(e){
+        console.warn('Could not load users collection', e);
+      }
+    }
+
+    async function loadMembers(){
+      console.log('Loading members from timesheet entries...');
+      listEl.innerHTML = '<div class="no-data">Loading...</div>';
+      const snaps = await getDocs(collection(db,'timesheet_entries'));
+      console.log(`Found ${snaps.size} timesheet entries`);
+      const byEngineer = {};
+      const {start, end} = getCurrentWeekRange();
+
+      snaps.forEach(d=>{
+        const data = d.data();
+        const name = (data.engineer || data.name || data.engineerName || '').trim() || 'Unknown';
+        const managerName = (data.manager || data.managerName || '').trim();
+        const ts = toLocalDate(data.date);
+        const uid = data.uid || data.engineerUid || data.userUid || '';
+        
+        console.log(`Processing timesheet entry for: ${name}`, {
+          entryData: data,
+          extractedName: name,
+          extractedManager: managerName,
+          extractedUid: uid,
+          clientInEntry: data.client
+        });
+
+        // Look up user data by name; if not present, try by uid
+        let userData = {};
+        if(name && usersMapByName[name]) userData = usersMapByName[name];
+        else if(uid && usersMapByUid[uid]) userData = usersMapByUid[uid];
+
+        const client = (userData.client || '').toString().trim();
+
+        if(!byEngineer[name]) byEngineer[name] = {
+          name,
+          manager: managerName || '',
+          client: client,
+          last: null,
+          uid: uid || null
+        };
+
+        if(ts){
+          if(!byEngineer[name].last || ts > byEngineer[name].last) byEngineer[name].last = ts;
+        }
+      });
+
+      currentMembers = Object.keys(byEngineer).map(name=>{
+        const e = byEngineer[name];
+        // fallback: if byEngineer had empty client try usersMapByUid (by uid)
+        let finalClient = e.client || '';
+        if(!finalClient && e.uid && usersMapByUid[e.uid] && usersMapByUid[e.uid].client){
+          finalClient = usersMapByUid[e.uid].client;
+        }
+        console.log(`Building member: ${e.name}`, {
+          fromTimesheet: e.client,
+          fromUsersByName: usersMapByName[e.name] ? usersMapByName[e.name].client : undefined,
+          fromUsersByUid: e.uid && usersMapByUid[e.uid] ? usersMapByUid[e.uid].client : undefined,
+          finalClient: finalClient
+        });
+        return {
+          name: e.name,
+          manager: e.manager,
+          client: finalClient || '',
+          last: e.last,
+          uid: e.uid
+        };
+      });
+      
+      console.log('Final members array with client data:', 
+        currentMembers.map(m => ({
+          name: m.name, 
+          client: m.client,
+          hasClient: !!m.client
+        }))
+      );
+
+      currentMembers.sort((a,b) => a.name.localeCompare(b.name));
+
+      // Debugging: Log client filter information
+      console.log("=== Client Filter Debugging ===");
+      console.log("Current Members:", currentMembers);
+      const allClients = Array.from(new Set(currentMembers.map(m => m.client).filter(Boolean)));
+      console.log("All Unique Clients in Data:", allClients);
+      console.log("Selected Client Filter:", getSelectedClient());
+      
+      // Show matching results for current filter
+      const selectedClient = getSelectedClient();
+      const filtered = currentMembers.filter(m => {
+        if(selectedClient === 'All') return true;
+        // selectedClient might be an array
+        if(Array.isArray(selectedClient)){
+          return selectedClient.map(s=>s.toLowerCase()).includes((m.client||'').toLowerCase());
+        }else{
+          return (m.client||'').toLowerCase() === String(selectedClient).toLowerCase();
+        }
+      });
+      console.log("Filtered Members Count:", filtered.length, "Details:", filtered);
+      console.log("=== End Debugging ===");
+
+      renderCards(currentMembers, searchEl.value.trim(), selectedClient);
+    }
+
+    function buildClientFilters(clients) {
+      // We preserve the "All Clients" checkbox at the top (outside of the dynamic rows),
+      // so just add checkbox rows for each client under that element.
+      // Remove any existing rows we added previously (class clientFilterRow).
+      document.querySelectorAll('.clientFilterRow').forEach(n=>n.remove());
+
+      // Create checkbox rows for each unique client
+      clients.filter(c=>c && String(c).trim()).forEach(c => {
+        const clientName = String(c).trim();
+        const row = document.createElement('label');
+        row.className = 'filterRow clientFilterRow';
+        row.innerHTML = `<input type="checkbox" class="clientFilter" value="${escapeHtml(clientName)}" /> <span>${escapeHtml(clientName)}</span>`;
+        clientFiltersEl.appendChild(row);
+      });
+
+      // Ensure "All Clients" checkbox defaults to checked if none selected
+      if(!Array.from(document.querySelectorAll('.clientFilter')).some(c=>c.checked)){
+        filterAllClientsEl.checked = true;
+      }
+    }
+
+    // Handle user menu interactions
+    const userMenu = document.getElementById('userMenu');
+    
+    // Toggle menu on mobile
+    if (userMenu) {
+      userMenu.addEventListener('click', (e) => {
+        if (e.target === userMenu || e.target.closest('.user-menu-top')) {
+          userMenu.classList.toggle('active');
+        }
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!userMenu.contains(e.target) && !e.target.matches('.signout')) {
+          userMenu.classList.remove('active');
+        }
+      });
+      
+      // Close menu on window resize (in case of orientation change)
+      window.addEventListener('resize', () => {
+        userMenu.classList.remove('active');
+      });
+    }
+
+    // pick color from name (deterministic)
+    function colorForName(name){
+      const palette = Array.from(getComputedStyle(document.documentElement).getPropertyValue('--initials-colors').split(',')).map(s=>s.trim());
+      if(!name) return palette[0];
+      let sum = 0;
+      for(let i=0;i<name.length;i++) sum += name.charCodeAt(i);
+      return palette[sum % palette.length];
+    }
+
+    function initialsFor(name){
+      if(!name) return '--';
+      const parts = name.trim().split(/\s+/).filter(Boolean);
+      if(parts.length === 1) return (parts[0][0] || '').toUpperCase();
+      return ((parts[0][0] || '') + (parts[parts.length-1][0] || '')).toUpperCase();
+    }
+
+    // Helper function to set profile photo with fallback to initials
+    function setProfilePhoto(element, photoURL, name) {
+      if (!element) return;
+      
+      // Default to initials
+      element.textContent = initialsFor(name || 'U');
+      element.style.background = colorForName(name);
+      element.style.color = '#fff';
+      element.style.backgroundSize = 'cover';
+      element.style.backgroundPosition = 'center';
+      element.style.backgroundImage = ''; // Reset any existing image
+
+      if (!photoURL) return;
+
+      // Try to load the image
+      const img = new Image();
+      img.onload = () => {
+        element.style.backgroundImage = `url('${photoURL}')`;
+        element.textContent = ''; // Hide initials if image loads
+      };
+      img.onerror = () => {
+        console.warn('Failed to load profile photo:', photoURL);
+        // Keep the initials if image fails to load
+      };
+      img.src = photoURL;
+    }
+
+    function renderCards(members, filter, clientFilter) {
+      const q = (filter || '').toLowerCase();
+      listEl.innerHTML = '';
+      
+      console.log('Rendering cards with filter:', clientFilter);
+      console.log('All members:', members);
+      
+      // First filter by name search if there's a search term
+      let out = q ? members.filter(m => m.name.toLowerCase().includes(q)) : [...members];
+      
+      // Then filter by client if a filter is selected and not 'All'
+      if (clientFilter && clientFilter !== 'All') {
+        const filterValues = Array.isArray(clientFilter) ? clientFilter.map(s=>String(s).toLowerCase()) : [String(clientFilter).toLowerCase()];
+        out = out.filter(m => filterValues.includes((m.client || '').toLowerCase()));
+        console.log('Filtered members:', out);
+      }
+      
+      if(out.length === 0){
+        listEl.innerHTML = '<div class="no-data">No members found.</div>';
+        return;
+      }
+
+      out.forEach(m=>{
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        // Get user data including photoURL if available
+        const userData = usersMapByName[m.name] || usersMapByUid[m.uid] || {};
+        const photoURL = userData.photoURL || userData.photoUrl || '';
+
+        // Create avatar element
+        const avatarEl = document.createElement('div');
+        avatarEl.className = 'avatar';
+        
+        // Set up the profile photo with fallback to initials
+        setProfilePhoto(avatarEl, photoURL, m.name);
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+
+        // left: info column (name only)
+        const info = document.createElement('div');
+        info.className = 'info';
+
+        const title = document.createElement('h3');
+        title.textContent = m.name;
+
+        info.appendChild(title);
+
+        // right: last date
+        const last = document.createElement('div');
+        last.className = 'lastLine';
+        last.textContent = 'Last: ' + formatDate(m.last);
+
+        meta.appendChild(info);
+        meta.appendChild(last);
+
+        card.appendChild(avatarEl);
+        card.appendChild(meta);
+
+        card.addEventListener('click', ()=> {
+          window.location.href = "engineer-review.html?engineer=" + encodeURIComponent(m.name);
+        });
+
+        listEl.appendChild(card);
+      });
+    }
+
+    function escapeHtml(s){
+      return String(s||'').replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    // small helper: current week (Monday start)
+    function getCurrentWeekRange(date = new Date()){
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const day = (d.getUTCDay() + 6) % 7;
+      const monday = new Date(d); monday.setUTCDate(d.getUTCDate() - day); monday.setUTCHours(0,0,0,0);
+      const sunday = new Date(monday); sunday.setUTCDate(monday.getUTCDate() + 6); sunday.setUTCHours(23,59,59,999);
+      return {start: monday, end: sunday};
+    }
+
+    // Expose debug helper for console
+    window.debugPrintMembers = () => {
+      console.log('members sample', currentMembers.slice(0,20));
+      console.log('all clients in members', Array.from(new Set(currentMembers.map(m=>m.client).filter(Boolean))));
+    };
+  </script>
+</body>
+</html>
+

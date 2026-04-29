@@ -1,0 +1,441 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Manager — Performance Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700,800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="css/manager-common.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#f3f7fb; --card:#fff; --muted:#6b7280; --accent:#2563eb;
+      --accent-2:#1e3a8a; --red:#ef4444; --amber:#f59e0b; --green:#10b981;
+      --kpi-target:#0f172a; --kpi-title:#6b7280;
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;background:var(--bg);color:#0f172a}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:240px;background:#fff;padding:28px 18px;border-right:1px solid rgba(0,0,0,.05);display:flex;flex-direction:column}
+    .logo{display:flex;align-items:center;gap:12px}
+    .ico{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+    .nav a{padding:12px;border-radius:10px;color:var(--muted);text-decoration:none}
+    .nav a.active{background:#eef6ff;color:var(--accent);font-weight:600}
+    .user{margin-top:auto;padding-top:18px;border-top:1px solid rgba(0,0,0,.04)}
+    .user-info{display:flex;align-items:center;gap:12px}
+    .user-menu{position:absolute;top:22px;right:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:100;min-width:120px}
+    .user-menu-top{display:flex;align-items:center;gap:10px}
+    .signout{padding:6px 14px;border-radius:6px;border:1px solid #fee2e2;color:#b91c1c;background:#fff;cursor:pointer;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.2s ease;white-space:nowrap;width:100%;text-align:center}
+    .signout:hover{background:#fee2e2}
+    .main{flex:1;padding:22px;position:relative}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-right:140px}
+    .title h1{margin:0;font-size:26px}
+    .controls{display:flex;align-items:center;gap:10px}
+    .select,.btn{padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:var(--card)}
+    .btn{background:linear-gradient(90deg,var(--accent),#4f46e5);color:#fff;border:none;cursor:pointer}
+
+    /* evenly spaced 4 columns */
+    .top-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+    .card{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 6px 18px rgba(12,18,30,0.04);display:flex;flex-direction:column;justify-content:space-between}
+    .card h3{margin:0;color:var(--muted);font-size:13px}
+    .card .val{font-size:28px;font-weight:700;margin-top:8px}
+    .card .sub{color:var(--muted);margin-top:8px;font-size:13px}
+
+    /* mini KPI list inside cards */
+    .mini-kpis{margin-top:14px;border-top:1px solid rgba(0,0,0,0.04);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+    .mini-kpi{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .mini-kpi .title{color:var(--kpi-title);font-weight:600}
+    .mini-kpi .target{color:var(--kpi-target);font-weight:700;margin-right:12px;min-width:56px;text-align:right}
+    .mini-kpi .actual{font-weight:700;min-width:56px;text-align:right}
+
+    .kpi-good{color:var(--green)}
+    .kpi-warn{color:var(--amber)}
+    .kpi-bad{color:var(--red)}
+
+    /* right-most summary card styles */
+    .summary { text-align:center; padding:16px; }
+    .summary .counts { display:flex; gap:10px; justify-content:center; margin-top:8px; }
+    .count-pill { padding:8px 12px; border-radius:10px; background:#fff; box-shadow: 0 6px 16px rgba(12,18,30,0.04); }
+    .two-col{display:grid;grid-template-columns:2fr 420px;gap:18px}
+    .panel{background:var(--card);padding:20px;border-radius:14px;box-shadow:0 8px 30px rgba(12,18,30,0.04)}
+    .chart-wrap{height:380px}
+    .rag .section{border-radius:8px;padding:10px;background:#f8fafc;margin-bottom:10px}
+    .person-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(0,0,0,0.04)}
+    .avatar{width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;background:linear-gradient(90deg,#5db3ff,#2563eb)}
+    .util-pill{min-width:56px;text-align:center;padding:6px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04)}
+    .no-data{text-align:center;color:var(--muted);padding:18px}
+    @media(max-width:980px){.top-grid{grid-template-columns:repeat(2,1fr) 1fr}.two-col{grid-template-columns:1fr}.header{padding-right:140px}}
+    @media(max-width:640px){.sidebar{display:none}.main{padding:12px}.user-menu{top:12px;right:12px;min-width:100px}.header{padding-right:110px}}
+  </style>
+<script>if(window.self !== window.top) { document.write('<style>.sidebar{display:none !important;} .app{flex-direction:column;} .main{margin-left:0 !important; padding:15px !important;}</style>'); }</script></head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="favicon.png" style="width:44px; height:44px; border-radius:10px; object-fit:contain;">
+        <div><div style="font-weight:700">Performance</div><div style="color:var(--muted);font-size:13px">Tracker</div></div>
+      </div>
+      <nav class="nav">
+        <a href="updated.html"class="active"><i>📊</i> Dashboard</a>
+        <a href="teammembers.html"><i>👥</i> Team Members</a>
+        <a href="reports.html"><i>📈</i> Team Performance</a>
+		<a href="attendance.html"><i>📅</i> Attendance</a>
+        <a href="clientreporting.html"><i>🏢</i> Client Wise Reporting</a>
+        <a href="attrition.html"><i>📉</i> Attrition</a>
+        <a href="billing.html"><i>💰</i> Billing</a>
+        <a href="levelups.html"><i>🎯</i> Level Ups</a>
+      </nav>
+      <div class="user">
+        <div class="user-info">
+          <div id="userAvatar" style="width:40px;height:40px;border-radius:999px;background:#e6eefc;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700">U</div>
+          <div><div id="userName" style="font-weight:600;font-size:15px">User</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-top">
+          <div id="headerUserAvatar" class="user-avatar">U</div>
+          <div id="headerUserName" class="user-name">User</div>
+        </div>
+        <button class="signout" id="signOut">Sign Out</button>
+      </div>
+      <div class="header">
+        <div class="title">
+          <h1>Team Overview</h1>
+          <div style="color:var(--muted)">Monitor Performance, ticket volume, and team KPI performance.</div>
+        </div>
+        <div class="controls">
+          <button id="refresh" class="select">⟳</button>
+          <select id="period" class="select"><option value="month">This Month</option><option value="last7">Last 7 days</option><option value="quarter">This Quarter</option></select>
+        </div>
+      </div>
+
+      <!-- top grid: 4 even columns. KPIs split into first 3 cards -->
+      <div class="top-grid">
+        <!-- Card 1: Avg Util + KPIs (Billable Util & Cust CSAT) -->
+        <div class="card">
+          <div>
+            <h3>Avg Performance</h3>
+            <div class="val" id="avgUtil">—</div>
+            <div class="sub">Team average across active engineers</div>
+
+            <div class="mini-kpis">
+              <div class="mini-kpi">
+                <div class="title">Billable Utilisation Target</div>
+                <div class="target">80%</div>
+                <div id="kpi-util-actual" class="actual">—</div>
+              </div>
+
+              <div class="mini-kpi">
+                <div class="title">Cust CSAT</div>
+                <div class="target">95%</div>
+                <div id="kpi-csat-actual" class="actual">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Total Billable + KPIs (Tickets/day & SLA) -->
+        <div class="card">
+          <div>
+            <h3>Total Billable Hrs</h3>
+            <div class="val" id="totalBillable">—</div>
+            <div class="sub">Target: 400 hrs/week</div>
+
+            <div class="mini-kpis">
+              <div class="mini-kpi">
+                <div class="title">Tickets Resolved / Day</div>
+                <div class="target">8–10</div>
+                <div id="kpi-tickets-actual" class="actual">—</div>
+              </div>
+
+              <div class="mini-kpi">
+                <div class="title">SLA compliance</div>
+                <div class="target">95%</div>
+                <div id="kpi-sla-actual" class="actual">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Tickets Closed + KPIs (FTR & Same-day) -->
+        <div class="card">
+          <div>
+            <h3>Tickets Closed</h3>
+            <div class="val" id="ticketsClosed">—</div>
+            <div class="sub">Across active team</div>
+
+            <div class="mini-kpis">
+              <div class="mini-kpi">
+                <div class="title">FTR (First Touch)</div>
+                <div class="target">60%</div>
+                <div id="kpi-ftr-actual" class="actual">—</div>
+              </div>
+
+              <div class="mini-kpi">
+                <div class="title">Same-Day Resolution</div>
+                <div class="target">80%</div>
+                <div id="kpi-sdr-actual" class="actual">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Team RAG summary -->
+        <div class="card">
+          <div class="summary">
+            <h3 style="margin-top:0">Team RAG Summary</h3>
+            <div style="color:var(--muted);margin-top:6px">Engineers by Performance</div>
+            <div class="counts" id="ragCounts" style="margin-top:12px">
+              <div class="count-pill"><div style="font-weight:700" id="count-green">0</div><div style="font-size:12px;color:var(--muted)">Green</div></div>
+              <div class="count-pill"><div style="font-weight:700" id="count-amber">0</div><div style="font-size:12px;color:var(--muted)">Amber</div></div>
+              <div class="count-pill"><div style="font-weight:700" id="count-red">0</div><div style="font-size:12px;color:var(--muted)">Red</div></div>
+            </div>
+
+            <div style="margin-top:12px;color:var(--muted);font-size:13px" id="ragPercent">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h3 style="margin-top:0">Resource Performance by Engineer</h3>
+          <div class="chart-wrap"><canvas id="utilChart"></canvas></div>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin-top:0">RAG — Performance Categories</h3>
+          <div id="ragPanel" class="rag"><div class="no-data">Loading...</div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    
+    // Handle user menu interactions
+    const userMenu = document.getElementById('userMenu');
+    
+    if (userMenu) {
+      // Toggle menu on mobile
+      userMenu.addEventListener('click', (e) => {
+        if (e.target === userMenu || e.target.closest('.user-menu-top')) {
+          userMenu.classList.toggle('active');
+        }
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!userMenu.contains(e.target) && !e.target.matches('.signout')) {
+          userMenu.classList.remove('active');
+        }
+      });
+      
+      // Close menu on window resize (in case of orientation change)
+      window.addEventListener('resize', () => {
+        userMenu.classList.remove('active');
+      });
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOwKXnOXAw_hl3ZTYjtPnMJG_TiSHm8rY",
+      authDomain: "utilizationtracker.firebaseapp.com",
+      projectId: "utilizationtracker",
+      storageBucket: "utilizationtracker.firebasestorage.app",
+      messagingSenderId: "67928414030",
+      appId: "1:67928414030:web:2cae8e72eeb146820b701f",
+      measurementId: "G-6LE13CNF0K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Load user profile
+    onAuthStateChanged(auth, async user => {
+      if(!user){
+        window.location.href = '/login.html';
+        return;
+      }
+      
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userRef);
+        const profile = snap.exists() ? snap.data() : {};
+        
+        let displayName = profile.name || user.displayName || '';
+        if(!displayName && user.email){
+          const local = user.email.split('@')[0].replace(/[._]/g,' ');
+          displayName = local.split(' ').map(p=> p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
+        }
+        
+        const initials = displayName ? displayName.split(' ').map(x=>x[0]||'').slice(0,2).join('').toUpperCase() : 'U';
+        document.getElementById('userName').textContent = displayName || 'User';
+        document.getElementById('headerUserName').textContent = displayName || 'User';
+        document.getElementById('userAvatar').textContent = initials;
+        document.getElementById('headerUserAvatar').textContent = initials;
+      } catch(err) {
+        console.error('Error loading user profile:', err);
+      }
+    });
+
+    // Sign out handler
+    document.getElementById('signOut').addEventListener('click', async () => {
+      try {
+        const { signOut } = await import("https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js");
+        await signOut(auth);
+        window.location.href = '/login.html';
+      } catch(err) {
+        console.error('Sign out failed:', err);
+        alert('Could not sign out: ' + (err.message || err));
+      }
+    });
+
+    // demo config & fallback sample data
+    const WORKING_HOURS_MONTH = 160;
+    const WORKING_DAYS_MONTH = 22;
+
+    function makeSampleTeam(){
+      const names = ["Farhan Ali","Grace Lee","Emma Johnson","Chloe Zhang","Himanshu Verma","Alice Kumar","Diego Silva","Bob Patel","Jack Thompson","Isha Nair"];
+      return names.map((n,i)=>{
+        const billable = Math.round((30 + Math.random()*130) * 10)/10;
+        const tickets = Math.round(10 + Math.random()*90);
+        const csat = Math.round(85 + Math.random()*15);
+        const sla = Math.round(88 + Math.random()*12);
+        const ftr = Math.round(40 + Math.random()*40);
+        const sdr = Math.round(50 + Math.random()*40);
+        return { name: n, billableHours: billable, ticketsResolved: tickets, csat, sla, ftr, sdr };
+      });
+    }
+
+    function avg(arr){ if(!arr.length) return 0; return arr.reduce((a,b)=>a+b,0)/arr.length }
+    function clamp(n,min,max){ return Math.max(min,Math.min(max,n)) }
+
+    let chart;
+
+    // KPIs coloring rules
+    function kpiColorForUtil(actual){ if(actual >= 80) return "kpi-good"; if(actual >= 60) return "kpi-warn"; return "kpi-bad"; }
+    function kpiColorForTickets(perDay){ if(perDay >= 8 && perDay <= 10) return "kpi-good"; if(perDay >= 6 && perDay <= 12) return "kpi-warn"; return "kpi-bad"; }
+    function kpiColorForPercent(actual, target){ if(actual >= target) return "kpi-good"; if(actual >= target * 0.9) return "kpi-warn"; return "kpi-bad"; }
+
+    function setMiniKPI(id, text, cls){
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.classList.remove("kpi-good","kpi-warn","kpi-bad");
+      if(cls) el.classList.add(cls);
+    }
+
+    function renderTopCards(metrics){
+      document.getElementById("avgUtil").textContent = (metrics.teamAvgUtil).toFixed(1)+"%";
+      document.getElementById("totalBillable").textContent = metrics.totalBillable.toFixed(1)+"h";
+      document.getElementById("ticketsClosed").textContent = metrics.totalTickets;
+
+      // populate mini KPIs with coloring
+      setMiniKPI("kpi-util-actual", (metrics.teamAvgUtil).toFixed(0) + "%", kpiColorForUtil(metrics.teamAvgUtil));
+      setMiniKPI("kpi-csat-actual", Math.round(metrics.teamCSAT) + "%", kpiColorForPercent(metrics.teamCSAT, 95));
+      setMiniKPI("kpi-tickets-actual", metrics.ticketsPerDay.toFixed(1) + "/day", kpiColorForTickets(metrics.ticketsPerDay));
+      setMiniKPI("kpi-sla-actual", Math.round(metrics.teamSLA) + "%", kpiColorForPercent(metrics.teamSLA, 95));
+      setMiniKPI("kpi-ftr-actual", Math.round(metrics.teamFTR) + "%", kpiColorForPercent(metrics.teamFTR, 60));
+      setMiniKPI("kpi-sdr-actual", Math.round(metrics.teamSDR) + "%", kpiColorForPercent(metrics.teamSDR, 80));
+    }
+
+    function renderChart(engineers){
+      const ctx = document.getElementById("utilChart");
+      if(chart) chart.destroy();
+      const labels = engineers.map(e=>e.name);
+      const values = engineers.map(e=>e.util);
+      const colors = engineers.map(e => e.util >= 80 ? 'rgba(16,185,129,0.85)' : (e.util >= 60 ? 'rgba(245,158,11,0.85)' : 'rgba(239,68,68,0.85)'));
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: { labels, datasets:[{ label:'Util %', data:values, backgroundColor:colors, borderRadius:8 }] },
+        options:{scales:{y:{beginAtZero:true, max:140}}, plugins:{legend:{display:false}}, responsive:true}
+      });
+    }
+
+    function renderRAG({red, amber, green}){
+      const ragPanel = document.getElementById("ragPanel");
+      ragPanel.innerHTML = '';
+      const makeSection = (title, list, color) => {
+        const sec = document.createElement('div'); sec.className='section';
+        const h = document.createElement('h4');
+        const dot = document.createElement('span');
+        dot.style.display='inline-block'; dot.style.width='10px'; dot.style.height='10px'; dot.style.borderRadius='6px'; dot.style.marginRight='8px'; dot.style.background=color;
+        h.appendChild(dot); h.appendChild(document.createTextNode(`${title} — ${list.length}`));
+        sec.appendChild(h);
+        if(list.length===0){ const nd = document.createElement('div'); nd.className='no-data'; nd.textContent='None'; sec.appendChild(nd); return sec; }
+        list.forEach(p=>{
+          const r = document.createElement('div'); r.className='person-row';
+          r.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><div class="avatar">${String(p.name).split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase()}</div>
+                         <div><div style="font-weight:700">${p.name}</div><div style="font-size:13px;color:var(--muted)">${Math.round(p.util)}% avg util</div></div></div>
+                         <div style="display:flex;gap:8px;align-items:center"><div class="util-pill">${Math.round(p.util)}%</div><div class="util-pill">${(p.billableHours||0).toFixed(1)}h</div></div>`;
+          sec.appendChild(r);
+        });
+        return sec;
+      };
+      ragPanel.appendChild(makeSection('Red (< 60%)', red, 'var(--red)'));
+      ragPanel.appendChild(makeSection('Amber (60–79%)', amber, 'var(--amber)'));
+      ragPanel.appendChild(makeSection('Green (≥ 80%)', green, 'var(--green)'));
+    }
+
+    function computeMetrics(engineers){
+      const totalBillable = engineers.reduce((s,e)=>s + (e.billableHours||0), 0);
+      const totalTickets = engineers.reduce((s,e)=>s + (e.ticketsResolved||0), 0);
+      const utils = engineers.map(e => ((e.billableHours || 0) / WORKING_HOURS_MONTH) * 100);
+      const teamAvgUtil = avg(utils) || 0;
+      const teamCSAT = avg(engineers.map(e=>e.csat||0));
+      const teamSLA = avg(engineers.map(e=>e.sla||0));
+      const teamFTR = avg(engineers.map(e=>e.ftr||0));
+      const teamSDR = avg(engineers.map(e=>e.sdr||0));
+      const ticketsPerDay = totalTickets / WORKING_DAYS_MONTH;
+      return { totalBillable, totalTickets, teamAvgUtil, teamCSAT, teamSLA, teamFTR, teamSDR, ticketsPerDay };
+    }
+
+    async function fetchAndRender(){
+      // loading placeholders
+      document.getElementById("avgUtil").textContent = "Loading...";
+      document.getElementById("totalBillable").textContent = "Loading...";
+      document.getElementById("ticketsClosed").textContent = "Loading...";
+      document.getElementById("ragPanel").innerHTML = '<div class="no-data">Loading...</div>';
+
+      // fallback sample; change to Firestore fetch if you want real data
+      let engineers = makeSampleTeam();
+
+      engineers = engineers.map(e => {
+        const util = ((e.billableHours||0)/WORKING_HOURS_MONTH) * 100;
+        return {...e, util: clamp(util,0,999)};
+      });
+
+      const metrics = computeMetrics(engineers);
+      renderTopCards(metrics);
+
+      const sorted = engineers.slice().sort((a,b)=> (b.billableHours||0) - (a.billableHours||0));
+      renderChart(sorted);
+
+      const green = sorted.filter(e => e.util >= 80);
+      const amber = sorted.filter(e => e.util >= 60 && e.util < 80);
+      const red = sorted.filter(e => e.util < 60);
+      renderRAG({red, amber, green});
+
+      // update rag counts summary
+      document.getElementById("count-green").textContent = green.length;
+      document.getElementById("count-amber").textContent = amber.length;
+      document.getElementById("count-red").textContent = red.length;
+      const total = engineers.length || 1;
+      document.getElementById("ragPercent").textContent = `Green ${(green.length/total*100).toFixed(0)}% • Amber ${(amber.length/total*100).toFixed(0)}% • Red ${(red.length/total*100).toFixed(0)}%`;
+    }
+
+    document.getElementById("refresh").addEventListener("click", fetchAndRender);
+    document.getElementById("period").addEventListener("change", fetchAndRender);
+    fetchAndRender();
+  </script>
+</body>
+</html>
+

@@ -49,29 +49,6 @@ transition: transform 0.2s ease;
 transform-style: preserve-3d;
 }
 
-.logo-wrap::after{
-content:"";
-position:absolute;
-width:200%;
-height:200%;
-top:-50%;
-left:-50%;
-background: linear-gradient(120deg,transparent 40%,rgba(255,255,255,0.4),transparent 60%);
-transform: rotate(25deg);
-opacity:0;
-pointer-events:none;
-}
-
-.logo-wrap:hover::after{
-animation: shine 1s ease;
-opacity:1;
-}
-
-@keyframes shine{
-0%{transform:translateX(-100%) rotate(25deg);}
-100%{transform:translateX(100%) rotate(25deg);}
-}
-
 .brand{
 font-size:36px;
 font-weight:700;
@@ -222,6 +199,7 @@ let userCred;
 if(isSignUp){
 userCred = await createUserWithEmailAndPassword(auth,email,password);
 
+// ✅ CREATE USER DOC
 await setDoc(doc(db,"users",userCred.user.uid),{
 email: email,
 role: "engineer",
@@ -236,15 +214,19 @@ userCred = await signInWithEmailAndPassword(auth,email,password);
 
 isRedirecting = true;
 
-// ✅ FIXED: no race condition
 const user = userCred.user;
 
-const docSnap = await getDoc(doc(db,"users",user.uid));
+// ✅ FIX: ensure user doc exists (handles race condition)
+let docRef = doc(db,"users",user.uid);
+let docSnap = await getDoc(docRef);
 
 if(!docSnap.exists()){
-alert("User data not found!");
-loginBtn.disabled = false;
-return;
+await setDoc(docRef,{
+email: user.email,
+role: "engineer",
+createdAt: serverTimestamp()
+});
+docSnap = await getDoc(docRef);
 }
 
 const role = docSnap.data().role;
@@ -279,9 +261,18 @@ onAuthStateChanged(auth, async (user)=>{
 
 if(user && !isRedirecting){
 
-const docSnap = await getDoc(doc(db,"users",user.uid));
+let docRef = doc(db,"users",user.uid);
+let docSnap = await getDoc(docRef);
 
-if(!docSnap.exists()) return;
+// ✅ SAME FIX HERE
+if(!docSnap.exists()){
+await setDoc(docRef,{
+email: user.email,
+role: "engineer",
+createdAt: serverTimestamp()
+});
+docSnap = await getDoc(docRef);
+}
 
 const role = docSnap.data().role;
 
