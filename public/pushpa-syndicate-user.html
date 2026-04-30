@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Pushpa AI Syndicate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* CSS Reset and Variables */
+:root {
+  --bg-color: #0f172a; /* Slate 900 */
+  --surface-color: #1e293b; /* Slate 800 */
+  --surface-hover: #334155; /* Slate 700 */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --primary-accent: #3b82f6; /* Blue 500 */
+  --primary-hover: #2563eb;
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --font-family: 'Inter', sans-serif;
+  
+  /* Sidebar Variables */
+  --bg-dark: #060b14;
+  --panel-bg: #0b1221;
+  --card-bg: #111827;
+  --border: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Base Layout */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* Header Navbar */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  gap: 0.75rem;
+}
+
+.logo span {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.user-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 42px;
+  padding: 0 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger {
+  background-color: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+/* SIDEBAR CSS */
+.sidebar { width: 260px; background: var(--panel-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; height: 100vh; position: sticky; top: 0; flex-shrink: 0; }
+.logo-container { padding: 0 24px 20px 24px; display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 24px; height: 24px; color: var(--primary-accent); }
+.logo-text { font-size: 20px; font-weight: 700; color: var(--text-main); }
+.nav-menu { flex: 1; overflow-y: auto; padding: 0 16px; }
+.nav-menu::-webkit-scrollbar { width: 6px; }
+.nav-menu::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; margin-bottom: 4px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--primary-accent); }
+.nav-item svg { width: 20px; height: 20px; opacity: 0.8; }
+.nav-item.active svg { opacity: 1; }
+.section-title-sidebar { color: #475569; font-size: 11px; text-transform: uppercase; font-weight: 600; margin: 20px 16px 10px; letter-spacing: 0.5px; }
+.user-profile { margin: 20px 16px 0; padding: 12px; background: var(--card-bg); border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); }
+.user-profile img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.user-info h4 { margin: 0; font-size: 13px; font-weight: 600; }
+.user-info p { margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted); }
+
+/* SYNDICATE STYLES */
+.page-header {
+    margin-bottom: 40px;
+}
+
+.page-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    background: linear-gradient(to right, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.page-header p {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 16px;
+    max-width: 600px;
+    line-height: 1.6;
+}
+
+.syndicate-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.hero-card {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.05));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 20px;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: var(--primary-accent);
+    filter: blur(100px);
+    opacity: 0.2;
+}
+
+.hero-content {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #fff;
+}
+
+.hero-desc {
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 24px;
+}
+
+.founders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.founder-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.founder-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.founder-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 20px;
+    border: 3px solid var(--panel-bg);
+    box-shadow: 0 0 0 3px var(--primary-accent);
+}
+
+.founder-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+.founder-title {
+    color: var(--primary-accent);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.founder-bio {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.section-heading {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-heading svg {
+    color: var(--primary-accent);
+    width: 24px;
+    height: 24px;
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="logo-container">
+        <svg class="logo-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        <div class="logo-text">MetricSpark</div>
+    </div>
+
+    <div class="nav-menu">
+        <a href="user-dashboard.html" class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            Dashboard
+        </a>
+        <div class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            Companies
+        </div>
+
+        <div class="section-title-sidebar">Menu</div>
+        <div class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+            Worklog
+        </div>
+        <div class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+            Tickets
+        </div>
+        <div class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Reports
+        </div>
+        <div class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+            Analytics
+        </div>
+        <div class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Calendar
+        </div>
+        <div class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            Settings
+        </div>
+
+        <div class="section-title-sidebar">Syndicate</div>
+        <div class="nav-item active">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            The Pushpa AI Syndicate
+        </div>
+    </div>
+
+    <div class="user-profile">
+        <img id="sidebarProfileImg" src="Pushpa.jpg" alt="Profile" onerror="this.src='https://ui-avatars.com/api/?name=User&background=1d4ed8&color=fff'">
+        <div class="user-info">
+            <h4 id="sidebarUserName">User</h4>
+            <p>Engineer</p>
+        </div>
+    </div>
+</div>
+
+<div class="app-container">
+  
+  <header class="top-nav">
+    <div class="logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      <span>MetricSpark</span>
+    </div>
+    <div class="user-controls">
+      <span id="displayUserName" style="font-weight: 500; color: var(--text-secondary);"></span>
+      <button class="btn btn-danger" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-header">
+        <h1>The Pushpa AI Syndicate</h1>
+        <p>The Pushpa AI Syndicate, we are pioneering the next generation of AI-powered engineering solutions through MetricSpark. By combining deep technical expertise with intelligent automation, we enable organizations to streamline workflows, gain real-time insights, and unlock exponential productivity.
+
+Our focus is simple: build smarter systems that drive measurable impact..</p>
+    </div>
+
+    <div class="syndicate-layout">
+        <!-- HERO MISSION -->
+        <div class="hero-card">
+            <div class="hero-content">
+                <div class="hero-title">Pioneering the Future of Work</div>
+                <div class="hero-desc">
+                    The Pushpa AI Syndicate is dedicated to building intelligent, ambient tooling for modern engineering teams. We believe that by automating the tracking, analysis, and optimization of billable hours, we can empower managers to focus on what truly matters: building great products and nurturing talent.
+                </div>
+            </div>
+        </div>
+
+        <!-- FOUNDERS LIST -->
+        <div>
+            <h3 class="section-heading">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+              MetricSpark  Leadership Team
+            </h3>
+            <div class="founders-grid">
+                
+                <div class="founder-card">
+                    <img src="Pushpa.jpg" alt="Aman Thakur" class="founder-img" onerror="this.src='https://ui-avatars.com/api/?name=Aman+Thakur&background=1d4ed8&color=fff'">
+                    <div class="founder-name">Aman Thakur</div>
+                    <div class="founder-title">Founder & CEO</div>
+                    <div class="founder-bio">
+                        Leading the strategic vision and engineering culture behind MetricSpark. Aman focuses on scalable systems and creating data-driven environments for modern developers.
+                    </div>
+                </div>
+
+                <div class="founder-card">
+                    <img src="https://ui-avatars.com/api/?name=Pushpa+AI&background=8b5cf6&color=fff" alt="Pushpa AI" class="founder-img">
+                    <div class="founder-name">Pushpa AI</div>
+                    <div class="founder-title">Core Intelligence Team </div>
+                    <div class="founder-bio">
+                        The intelligent engine powering our automated analytics and insights. Pushpa constantly learns from team metrics to provide actionable recommendations.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyANWlsjTqHVeaCBBrOH8LJ-cMygCZoIhYc",
+  authDomain: "metricspark-1456b.firebaseapp.com",
+  projectId: "metricspark-1456b"
+});
+
+const auth = getAuth(app);
+
+const els = {
+  logoutBtn: document.getElementById("logoutBtn"),
+  displayUserName: document.getElementById("displayUserName"),
+  sidebarUserName: document.getElementById("sidebarUserName"),
+  sidebarProfileImg: document.getElementById("sidebarProfileImg")
+};
+
+// AUTH
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    let email = user.email.split("@")[0];
+    let currentName = email.split(".").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+
+    els.displayUserName.innerText = currentName;
+    if (els.sidebarUserName) els.sidebarUserName.innerText = currentName;
+    if (els.sidebarProfileImg) els.sidebarProfileImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentName)}&background=1d4ed8&color=fff`;
+  } else {
+    window.location.href = "index.html"; 
+  }
+});
+
+// LOGOUT
+if(els.logoutBtn) {
+  els.logoutBtn.onclick = () => signOut(auth);
+}
+</script>
+
+</body>
+</html>
