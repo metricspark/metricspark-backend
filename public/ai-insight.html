@@ -431,11 +431,11 @@ body {
         </div>
 
         <div class="section-title">Syndicate</div>
-        <a href="pushpa-syndicate.html" class="nav-item active">
+        <a href="pushpa-syndicate.html" class="nav-item">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             The Pushpa AI Syndicate
         </a>
-        <a href="ai-insight.html" class="nav-item">
+        <a href="ai-insight.html" class="nav-item active">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
             AI Insight
         </a>
@@ -474,51 +474,26 @@ body {
     <!-- DASHBOARD SCROLL AREA -->
     <div class="dashboard-scroll">
         
-        <div class="page-header">
-            <h1>The Pushpa AI Syndicate</h1>
-            <p>Meet the visionaries behind MetricSpark and our mission to supercharge engineering productivity with artificial intelligence.</p>
+        <div class="page-header" style="text-align: center; margin-bottom: 30px;">
+            <h1>Pushpa AI Insight</h1>
+            <p style="margin: 0 auto;">Ask any question to generate deep insights from your data using Pushpa AI.</p>
         </div>
 
-        <div class="syndicate-layout">
-            <!-- HERO MISSION -->
-            <div class="hero-card">
-                <div class="hero-content">
-                    <div class="hero-title">Pioneering the Future of Work</div>
-                    <div class="hero-desc">
-                        The Pushpa AI Syndicate is dedicated to building intelligent, ambient tooling for modern engineering teams. We believe that by automating the tracking, analysis, and optimization of billable hours, we can empower managers to focus on what truly matters: building great products and nurturing talent.
-                    </div>
+        <div style="max-width: 800px; margin: 0 auto; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column; height: 65vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+                <!-- Chat messages placeholder -->
+                <div style="align-self: flex-start; max-width: 80%; background: var(--card-bg); padding: 15px 20px; border-radius: 16px; border-bottom-left-radius: 4px; border: 1px solid var(--border);">
+                    <p style="margin: 0; color: var(--text-main); font-size: 14px; line-height: 1.5;">Hello! I am Pushpa AI. How can I help you analyze your engineering metrics today?</p>
                 </div>
             </div>
-
-            <!-- FOUNDERS LIST -->
-            <div>
-                <h3 class="section-heading">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    MetricSpark Leadership Team
-                </h3>
-                <div class="founders-grid">
-                    
-                    <div class="founder-card">
-                        <img src="Pushpa.jpg" alt="Aman Thakur" class="founder-img" onerror="this.src='https://ui-avatars.com/api/?name=Aman+Thakur&background=1d4ed8&color=fff'">
-                        <div class="founder-name">Aman Thakur</div>
-                        <div class="founder-title">Founder & CEO</div>
-                        <div class="founder-bio">
-                            Leading the strategic vision and engineering culture behind MetricSpark. Aman focuses on scalable systems and creating data-driven environments for modern developers.
-                        </div>
-                    </div>
-
-                    <div class="founder-card">
-                        <img src="https://ui-avatars.com/api/?name=Pushpa+AI&background=8b5cf6&color=fff" alt="Pushpa AI" class="founder-img">
-                        <div class="founder-name">Pushpa AI</div>
-                        <div class="founder-title">Core Intelligence</div>
-                        <div class="founder-bio">
-                            The intelligent engine powering our automated analytics and insights. Pushpa constantly learns from team metrics to provide actionable recommendations.
-                        </div>
-                    </div>
-
+            <div style="padding: 20px; border-top: 1px solid var(--border); background: var(--card-bg); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="text" placeholder="Ask AI anything about your team's performance..." style="width: 100%; padding: 16px 50px 16px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--bg-dark); color: var(--text-main); font-size: 14px; outline: none; transition: 0.2s;">
+                    <button style="position: absolute; right: 10px; background: var(--primary); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                        <svg style="width: 18px; height: 18px; transform: rotate(90deg);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-7 7m7-7l7 7"></path></svg>
+                    </button>
                 </div>
             </div>
-
         </div>
 
     </div>

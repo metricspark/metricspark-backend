@@ -63,7 +63,7 @@ body {
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  /* Removed border-bottom so it doesn't cross the logo */
 }
 
 .logo {
@@ -352,9 +352,8 @@ tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
 <div class="app-container">
   
   <header class="top-nav">
-    <div class="logo">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-      <span>MetricSpark</span>
+    <div class="logo" style="height: 60px; display: flex; align-items: center; position: relative; width: 220px;">
+      <img src="logo-icon.png" alt="MetricSpark Logo" style="position: absolute; height: 200px; width: auto; max-width: none; mix-blend-mode: lighten; pointer-events: none; left: -50px;">
     </div>
     <div class="user-controls">
       <span id="displayUserName" style="font-weight: 500; color: var(--text-secondary);"></span>

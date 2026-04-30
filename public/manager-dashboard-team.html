@@ -719,7 +719,7 @@ tr:last-child td {
                         <span class="kpi-value" id="worked">0</span>
                     </div>
                 </div>
-                <div class="kpi-trend">↑ 12% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">from last month</span></div>
+                <div class="kpi-trend" id="trend-worked">↑ 0% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">vs previous</span></div>
             </div>
 
             <div class="kpi-card card-engineers">
@@ -732,7 +732,7 @@ tr:last-child td {
                         <span class="kpi-value" id="engCount">0</span>
                     </div>
                 </div>
-                <div class="kpi-trend">↑ 8% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">from last month</span></div>
+                <div class="kpi-trend" id="trend-engCount">↑ 0% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">vs previous</span></div>
             </div>
 
             <div class="kpi-card card-billable">
@@ -745,7 +745,7 @@ tr:last-child td {
                         <span class="kpi-value" id="bill">0</span>
                     </div>
                 </div>
-                <div class="kpi-trend">↑ 15% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">from last month</span></div>
+                <div class="kpi-trend" id="trend-bill">↑ 0% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">vs previous</span></div>
             </div>
 
             <div class="kpi-card card-utilization">
@@ -758,7 +758,7 @@ tr:last-child td {
                         <span class="kpi-value" id="util">0%</span>
                     </div>
                 </div>
-                <div class="kpi-trend">↑ 6% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">from last month</span></div>
+                <div class="kpi-trend" id="trend-util">↑ 0% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">vs previous</span></div>
             </div>
 
             <div class="kpi-card card-touched">
@@ -771,7 +771,7 @@ tr:last-child td {
                         <span class="kpi-value" id="touched">0</span>
                     </div>
                 </div>
-                <div class="kpi-trend">↑ 10% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">from last month</span></div>
+                <div class="kpi-trend" id="trend-touched">↑ 0% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">vs previous</span></div>
             </div>
 
             <div class="kpi-card card-closed">
@@ -784,7 +784,7 @@ tr:last-child td {
                         <span class="kpi-value" id="closed">0</span>
                     </div>
                 </div>
-                <div class="kpi-trend">↑ 11% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">from last month</span></div>
+                <div class="kpi-trend" id="trend-closed">↑ 0% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">vs previous</span></div>
             </div>
         </div>
 
@@ -980,14 +980,71 @@ function getData(){
     return filtered;
 }
 
+function getPreviousData(){
+    let filtered = rawData;
+    
+    // Company Filter
+    if(currentCompany !== "all") {
+        filtered = filtered.filter(r => {
+            let comp = r.company || "Milner";
+            return comp === currentCompany;
+        });
+    }
+    
+    // Engineer Filter
+    if(currentEngineer !== "all") {
+        filtered = filtered.filter(r => r.engineerName === currentEngineer);
+    }
+    
+    if(currentDateFilter !== "all") {
+        let now = new Date();
+        let currentStart = new Date();
+        let prevStart = new Date();
+        let prevEnd = new Date();
+
+        if(currentDateFilter === "daily") {
+            prevStart.setDate(now.getDate() - 1);
+            filtered = filtered.filter(r => {
+                if(!r.date) return false;
+                let rowDate = new Date(r.date);
+                return isSameDay(rowDate, prevStart);
+            });
+        } else if(currentDateFilter === "7days") {
+            currentStart.setDate(now.getDate() - 7);
+            prevStart.setDate(now.getDate() - 14);
+            prevEnd.setDate(now.getDate() - 7);
+            filtered = filtered.filter(r => {
+                if(!r.date) return false;
+                let rowDate = new Date(r.date);
+                return rowDate >= prevStart && rowDate < prevEnd;
+            });
+        } else if(currentDateFilter === "30days") {
+            currentStart.setDate(now.getDate() - 30);
+            prevStart.setDate(now.getDate() - 60);
+            prevEnd.setDate(now.getDate() - 30);
+            filtered = filtered.filter(r => {
+                if(!r.date) return false;
+                let rowDate = new Date(r.date);
+                return rowDate >= prevStart && rowDate < prevEnd;
+            });
+        }
+    } else {
+        return [];
+    }
+
+    return filtered;
+}
+
 /* SAFE */
 function safe(a,b){return b?((a/b)*100).toFixed(1):0;}
 
 /* UPDATE UI */
 function update(){
  let list=getData();
+ let prevList=getPreviousData();
 
  let worked=0,closed=0,bill=0,non=0;
+ let prevWorked=0,prevClosed=0,prevBill=0,prevNon=0;
 
  // Sort list by date ascending for chart
  let sortedList = [...list].sort((a,b) => new Date(a.date) - new Date(b.date));
@@ -1000,6 +1057,13 @@ function update(){
   closed+=+r.closed||0;
   bill+=+r.billable||0;
   non+=+r.nonbillable||0;
+ });
+
+ prevList.forEach(r=>{
+  prevWorked+=+r.tickets||0;
+  prevClosed+=+r.closed||0;
+  prevBill+=+r.billable||0;
+  prevNon+=+r.nonbillable||0;
  });
 
  sortedList.forEach(r => {
@@ -1022,6 +1086,29 @@ function update(){
      count = 3;
  }
  document.getElementById("engCount").innerText = count;
+
+ function updateTrend(id, current, prev) {
+     let el = document.getElementById(id);
+     if(!el) return;
+     if(currentDateFilter === "all" || prev === 0) {
+         el.innerHTML = `<span style="color:var(--text-muted); font-size:11px;">N/A vs previous</span>`;
+         el.style.color = "var(--text-muted)";
+         return;
+     }
+     let pct = ((current - prev) / prev) * 100;
+     let dir = pct >= 0 ? '↑' : '↓';
+     let color = pct >= 0 ? 'var(--success)' : '#ef4444';
+     el.innerHTML = `${dir} ${Math.abs(pct).toFixed(0)}% <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">vs previous</span>`;
+     el.style.color = color;
+ }
+
+ updateTrend("trend-worked", list.length, prevList.length);
+ let prevEngCount = new Set(prevList.map(x=>x.engineerName)).filter(Boolean).length;
+ updateTrend("trend-engCount", count, prevEngCount);
+ updateTrend("trend-bill", bill, prevBill);
+ updateTrend("trend-util", safe(bill, bill+non), safe(prevBill, prevBill+prevNon));
+ updateTrend("trend-touched", worked, prevWorked);
+ updateTrend("trend-closed", closed, prevClosed);
 
  document.querySelectorAll('.kpi-trend').forEach(el => {
      el.style.display = list.length === 0 ? 'none' : 'flex';
